@@ -1,0 +1,430 @@
+/* ============================================================
+   OBE MicTech — Coordinator Dashboard Module
+   ============================================================ */
+const CoordinatorModule = (() => {
+
+    function renderSection(section) {
+        const c = App.getContent();
+        switch (section) {
+            case 'dashboard':  renderDashboard(c); break;
+            case 'marks':      renderMarksEntry(c); break;
+            case 'timetable':  renderTimetable(c); break;
+            case 'status':     renderSubjectStatus(c); break;
+            default:           renderDashboard(c);
+        }
+    }
+
+    /* =================== MARKS ENTRY (editable) =================== */
+    function renderMarksEntry(c) {
+        const subjects = DataStore.getSubjects();
+        c.innerHTML = `
+        <div class="fade-in">
+            <div class="page-header">
+                <h1>Edit Internal Marks</h1>
+                <p>Select any subject to enter/modify MID-I & MID-II marks</p>
+            </div>
+            <div class="card">
+                <div class="card-header"><h2>Select Subject</h2></div>
+                <div class="card-body">
+                    <div class="form-group" style="max-width:400px;">
+                        <select class="form-select" id="coord-marks-select">
+                            <option value="">— Choose a subject —</option>
+                            ${subjects.map(s => `<option value="${s.id}">${s.code} — ${s.name} (Sem ${s.semester})</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div id="coord-marks-container"></div>
+        </div>`;
+
+        document.getElementById('coord-marks-select').addEventListener('change', (e) => {
+            const container = document.getElementById('coord-marks-container');
+            const subjectId = e.target.value;
+            if (subjectId) {
+                container.innerHTML = MarksUtils.renderTable(subjectId, true);
+                MarksUtils.bindEvents(container, subjectId);
+            } else { container.innerHTML = ''; }
+        });
+    }
+
+    /* =================== DASHBOARD =================== */
+    function renderDashboard(c) {
+        const subjects = DataStore.getSubjects();
+        const faculty  = DataStore.getFaculty();
+        const students = DataStore.getStudents();
+        const tt       = DataStore.getTimetable();
+
+        let entered = 0, notEntered = 0;
+        subjects.forEach(s => {
+            if (DataStore.areMarksEntered(s.id)) entered++; else notEntered++;
+        });
+
+        const statuses = DataStore.getSubjectStatus();
+        let avgCompletion = 0;
+        const sIds = Object.keys(statuses);
+        if (sIds.length) avgCompletion = Math.round(sIds.reduce((a, k) => a + statuses[k], 0) / sIds.length);
+
+        c.innerHTML = `
+        <div class="fade-in">
+            <div class="page-header">
+                <h1>Coordinator Dashboard</h1>
+                <p>Overview of timetable assignments, subject progress, and mark entry status</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card purple">
+                    <div class="stat-icon">📚</div>
+                    <div class="stat-value">${subjects.length}</div>
+                    <div class="stat-label">Total Subjects</div>
+                </div>
+                <div class="stat-card blue">
+                    <div class="stat-icon">👨‍🏫</div>
+                    <div class="stat-value">${faculty.length}</div>
+                    <div class="stat-label">Faculty Members</div>
+                </div>
+                <div class="stat-card green">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-value">${entered}</div>
+                    <div class="stat-label">Marks Entered</div>
+                </div>
+                <div class="stat-card gold">
+                    <div class="stat-icon">⚠️</div>
+                    <div class="stat-value">${notEntered}</div>
+                    <div class="stat-label">Marks Pending</div>
+                </div>
+            </div>
+
+            <!-- Quick Subject Overview -->
+            <div class="card">
+                <div class="card-header"><h2>Subject Overview</h2></div>
+                <div class="card-body no-pad">
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead><tr>
+                                <th>Code</th><th>Subject</th><th>Faculty</th><th>Completion</th><th>Marks Status</th>
+                            </tr></thead>
+                            <tbody>
+                                ${subjects.map(s => {
+                                    const fac = s.facultyId ? DataStore.getFacultyById(s.facultyId) : null;
+                                    const pct = DataStore.getSubjectStatusById(s.id);
+                                    const entered = DataStore.areMarksEntered(s.id);
+                                    const pClass = pct < 40 ? 'low' : pct < 75 ? 'medium' : 'high';
+                                    return `<tr>
+                                        <td><span class="badge badge-info">${s.code}</span></td>
+                                        <td class="fw-600">${s.name}</td>
+                                        <td>${fac ? fac.name : '<span class="text-muted">Unassigned</span>'}</td>
+                                        <td style="min-width:150px">
+                                            <div class="progress-label"><span>${pct}%</span></div>
+                                            <div class="progress-bar"><div class="progress-fill ${pClass}" style="width:${pct}%"></div></div>
+                                        </td>
+                                        <td>
+                                            <span class="status-dot ${entered?'green':'red'}"></span>
+                                            ${entered
+                                                ? '<span class="badge badge-success">Entered</span>'
+                                                : '<span class="badge badge-danger">Not Entered</span>'}
+                                        </td>
+                                    </tr>`;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    /* =================== TIMETABLE =================== */
+    const DAYS    = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const PERIODS = ['Period 1\n9:00-10:00','Period 2\n10:00-11:00','Period 3\n11:15-12:15',
+                     'Period 4\n12:15-1:15','Period 5\n2:00-3:00','Period 6\n3:00-4:00'];
+
+    function renderTimetable(c) {
+        const subjects = DataStore.getSubjects();
+        const faculty  = DataStore.getFaculty();
+        const tt       = DataStore.getTimetable();
+
+        c.innerHTML = `
+        <div class="fade-in">
+            <div class="page-header">
+                <h1>Assign Timetable</h1>
+                <p>Map faculty and subjects to weekly time slots</p>
+                <div class="page-actions">
+                    <button class="btn btn-primary" id="tt-add-btn">➕ Add Entry</button>
+                    <button class="btn btn-danger btn-sm" id="tt-clear-btn">🗑️ Clear All</button>
+                </div>
+            </div>
+
+            <!-- Timetable Grid -->
+            <div class="card">
+                <div class="card-body" style="overflow-x:auto">
+                    <div class="timetable-grid" id="tt-grid">
+                        <div class="tt-cell tt-header"></div>
+                        ${DAYS.map(d => `<div class="tt-cell tt-header">${d.substring(0,3)}</div>`).join('')}
+                        ${PERIODS.map((p, pi) => {
+                            const pLabel = p.split('\n');
+                            let row = `<div class="tt-cell tt-label">${pLabel[0]}<br><small>${pLabel[1]}</small></div>`;
+                            DAYS.forEach((d, di) => {
+                                const entry = tt.find(e => e.day === di && e.period === pi);
+                                if (entry) {
+                                    const sub = DataStore.getSubjectById(entry.subjectId);
+                                    const fac = DataStore.getFacultyById(entry.facultyId);
+                                    row += `<div class="tt-cell tt-filled" data-id="${entry.id}" title="Click to remove">
+                                        <div class="tt-subject">${sub ? sub.code : '?'}</div>
+                                        <div class="tt-faculty">${fac ? fac.name.split(' ').pop() : '?'}</div>
+                                    </div>`;
+                                } else {
+                                    row += `<div class="tt-cell"></div>`;
+                                }
+                            });
+                            return row;
+                        }).join('')}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timetable entries list -->
+            <div class="card">
+                <div class="card-header"><h2>All Entries</h2></div>
+                <div class="card-body no-pad">
+                    ${tt.length === 0
+                        ? '<div class="empty-state"><div class="empty-icon">📅</div><p>No timetable entries yet. Click "Add Entry" to start.</p></div>'
+                        : `<div class="table-wrapper"><table class="table">
+                            <thead><tr><th>Day</th><th>Period</th><th>Subject</th><th>Faculty</th><th>Action</th></tr></thead>
+                            <tbody>${tt.map(e => {
+                                const sub = DataStore.getSubjectById(e.subjectId);
+                                const fac = DataStore.getFacultyById(e.facultyId);
+                                return `<tr>
+                                    <td>${DAYS[e.day] || '—'}</td>
+                                    <td>Period ${e.period+1}</td>
+                                    <td class="fw-600">${sub ? sub.name : '—'}</td>
+                                    <td>${fac ? fac.name : '—'}</td>
+                                    <td><button class="btn btn-danger btn-xs tt-del" data-id="${e.id}">✕</button></td>
+                                </tr>`;
+                            }).join('')}</tbody>
+                        </table></div>`
+                    }
+                </div>
+            </div>
+
+            <!-- Add Entry Modal (inline) -->
+            <div id="tt-modal" style="display:none"></div>
+        </div>`;
+
+        /* Delete entry from grid */
+        c.querySelectorAll('.tt-filled').forEach(el => {
+            el.addEventListener('click', () => {
+                if (confirm('Remove this timetable entry?')) {
+                    DataStore.deleteTimetableEntry(el.dataset.id);
+                    renderTimetable(c);
+                    App.showToast('Entry removed', 'info');
+                }
+            });
+        });
+
+        /* Delete entry from table */
+        c.querySelectorAll('.tt-del').forEach(btn => {
+            btn.addEventListener('click', () => {
+                DataStore.deleteTimetableEntry(btn.dataset.id);
+                renderTimetable(c);
+                App.showToast('Entry removed', 'info');
+            });
+        });
+
+        /* Clear all */
+        document.getElementById('tt-clear-btn').addEventListener('click', () => {
+            if (confirm('Clear the entire timetable?')) {
+                DataStore.clearTimetable();
+                renderTimetable(c);
+                App.showToast('Timetable cleared', 'info');
+            }
+        });
+
+        /* Add entry modal */
+        document.getElementById('tt-add-btn').addEventListener('click', () => showTTModal(c, subjects, faculty));
+    }
+
+    function showTTModal(c, subjects, faculty) {
+        const modal = document.getElementById('tt-modal');
+        modal.style.display = '';
+        modal.innerHTML = `
+        <div class="inline-modal">
+            <div class="modal-overlay" id="tt-modal-overlay"></div>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Add Timetable Entry</h2>
+                    <button class="modal-close" id="tt-modal-close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Subject</label>
+                        <select class="form-select" id="tt-subject">
+                            <option value="">— Select —</option>
+                            ${subjects.map(s => `<option value="${s.id}">${s.code} — ${s.name}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Faculty</label>
+                        <select class="form-select" id="tt-faculty">
+                            <option value="">— Select —</option>
+                            ${faculty.map(f => `<option value="${f.id}">${f.name}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Day</label>
+                            <select class="form-select" id="tt-day">
+                                ${DAYS.map((d,i) => `<option value="${i}">${d}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Period</label>
+                            <select class="form-select" id="tt-period">
+                                ${PERIODS.map((p,i) => `<option value="${i}">Period ${i+1}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                    <div id="tt-add-error" class="error-message" style="display:none"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" id="tt-cancel">Cancel</button>
+                    <button class="btn btn-primary" id="tt-save">Add Entry</button>
+                </div>
+            </div>
+        </div>`;
+
+        /* Auto-select faculty when subject changes */
+        document.getElementById('tt-subject').addEventListener('change', (e) => {
+            const sub = DataStore.getSubjectById(e.target.value);
+            if (sub && sub.facultyId) document.getElementById('tt-faculty').value = sub.facultyId;
+        });
+
+        const closeFn = () => { modal.style.display = 'none'; modal.innerHTML = ''; };
+        document.getElementById('tt-modal-close').addEventListener('click', closeFn);
+        document.getElementById('tt-modal-overlay').addEventListener('click', closeFn);
+        document.getElementById('tt-cancel').addEventListener('click', closeFn);
+
+        document.getElementById('tt-save').addEventListener('click', () => {
+            const subId = document.getElementById('tt-subject').value;
+            const facId = document.getElementById('tt-faculty').value;
+            const day   = parseInt(document.getElementById('tt-day').value);
+            const period = parseInt(document.getElementById('tt-period').value);
+
+            if (!subId || !facId) {
+                const err = document.getElementById('tt-add-error');
+                err.textContent = 'Please select both subject and faculty.';
+                err.style.display = 'block';
+                return;
+            }
+
+            const result = DataStore.addTimetableEntry({ subjectId:subId, facultyId:facId, day, period });
+            if (result.error) {
+                const err = document.getElementById('tt-add-error');
+                err.textContent = result.error;
+                err.style.display = 'block';
+                return;
+            }
+
+            closeFn();
+            renderTimetable(c);
+            App.showToast('Timetable entry added!', 'success');
+        });
+    }
+
+    /* =================== SUBJECT STATUS =================== */
+    function renderSubjectStatus(c) {
+        const subjects = DataStore.getSubjects();
+
+        c.innerHTML = `
+        <div class="fade-in">
+            <div class="page-header">
+                <h1>Subject Status Tracker</h1>
+                <p>Track syllabus completion and mark entry status for every subject</p>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>All Subjects</h2>
+                    <span class="badge badge-info">${subjects.length} subjects</span>
+                </div>
+                <div class="card-body no-pad">
+                    <div class="table-wrapper">
+                        <table class="table">
+                            <thead><tr>
+                                <th>Code</th><th>Subject</th><th>Faculty</th><th>Completion %</th><th>Marks Status</th><th>Update</th>
+                            </tr></thead>
+                            <tbody>
+                                ${subjects.map(s => {
+                                    const fac = s.facultyId ? DataStore.getFacultyById(s.facultyId) : null;
+                                    const pct = DataStore.getSubjectStatusById(s.id);
+                                    const entered = DataStore.areMarksEntered(s.id);
+                                    const pClass = pct < 40 ? 'low' : pct < 75 ? 'medium' : 'high';
+                                    return `<tr>
+                                        <td><span class="badge badge-info">${s.code}</span></td>
+                                        <td class="fw-600">${s.name}</td>
+                                        <td>${fac ? fac.name : '<span class="text-muted">—</span>'}</td>
+                                        <td style="min-width:180px">
+                                            <div class="flex gap-sm" style="align-items:center">
+                                                <input type="range" min="0" max="100" value="${pct}"
+                                                    class="status-slider" data-subject="${s.id}"
+                                                    style="flex:1;accent-color:var(--accent)">
+                                                <span class="status-pct fw-600" data-subject="${s.id}" style="width:42px;text-align:right">${pct}%</span>
+                                            </div>
+                                            <div class="progress-bar mt-1"><div class="progress-fill ${pClass}" style="width:${pct}%" data-bar="${s.id}"></div></div>
+                                        </td>
+                                        <td>
+                                            <span class="status-dot ${entered?'green':'red'}"></span>
+                                            ${entered
+                                                ? '<span class="badge badge-success">✓ Entered</span>'
+                                                : '<span class="badge badge-danger">✗ Not Entered</span>'}
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-primary btn-xs status-save" data-subject="${s.id}">Save</button>
+                                        </td>
+                                    </tr>`;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="flex gap-md" style="flex-wrap:wrap;font-size:0.85rem;">
+                        <span><span class="status-dot green"></span> Marks Entered (Green)</span>
+                        <span><span class="status-dot red"></span> Marks Not Entered (Red — needs attention)</span>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+        /* Live slider update */
+        c.querySelectorAll('.status-slider').forEach(slider => {
+            slider.addEventListener('input', () => {
+                const sId = slider.dataset.subject;
+                const val = parseInt(slider.value);
+                const lbl = c.querySelector(`.status-pct[data-subject="${sId}"]`);
+                const bar = c.querySelector(`[data-bar="${sId}"]`);
+                if (lbl) lbl.textContent = val + '%';
+                if (bar) {
+                    bar.style.width = val + '%';
+                    bar.className = 'progress-fill ' + (val < 40 ? 'low' : val < 75 ? 'medium' : 'high');
+                }
+            });
+        });
+
+        /* Save button */
+        c.querySelectorAll('.status-save').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const sId = btn.dataset.subject;
+                const slider = c.querySelector(`.status-slider[data-subject="${sId}"]`);
+                DataStore.setSubjectStatus(sId, parseInt(slider.value));
+                App.showToast('Completion status updated!', 'success');
+            });
+        });
+    }
+
+    /* =================== PUBLIC =================== */
+    return { renderSection };
+})();
