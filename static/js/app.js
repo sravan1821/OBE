@@ -100,7 +100,8 @@ const App = (() => {
             { id:'dashboard', icon:'📊', label:'Dashboard' },
             { id:'marks',     icon:'📝', label:'Marks Entry' },
             { id:'timetable', icon:'📅', label:'Assign Timetable' },
-            { id:'status',    icon:'📈', label:'Subject Status' }
+            { id:'status',    icon:'📈', label:'Subject Status' },
+            { id:'syllabus',  icon:'📖', label:'Syllabus Tracking' }
         ],
         management: [
             { id:'dashboard', icon:'📊', label:'Dashboard' },
@@ -112,7 +113,6 @@ const App = (() => {
             { id:'faculty',     icon:'👨‍🏫', label:'Manage Faculty' },
             { id:'departments', icon:'🏛️', label:'Departments' },
             { id:'subjects',    icon:'📚', label:'Subjects' },
-            { id:'assignments', icon:'🔗', label:'Assignments' },
             { id:'syllabus',    icon:'📖', label:'Syllabus' }
         ]
     };

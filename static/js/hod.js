@@ -12,8 +12,7 @@ const HODModule = (() => {
             case 'faculty':     renderFaculty(c); break;
             case 'departments': renderDepartments(c); break;
             case 'subjects':    renderSubjects(c); break;
-            case 'assignments': renderAssignments(c); break;
-            case 'syllabus':    renderSyllabus(c); break;
+            case 'syllabus':    FacultyModule.renderSyllabus(c); break;
             default:            renderDashboard(c);
         }
     }
@@ -606,57 +605,6 @@ const HODModule = (() => {
                 const facId = select.value || null;
                 DataStore.assignFacultyToSubject(subId, facId);
                 App.showToast('Assignment updated!', 'success');
-            });
-        });
-    }
-
-    /* =================== SYLLABUS (EDITABLE) =================== */
-    function renderSyllabus(c) {
-        const subjects = DataStore.getSubjects();
-        
-        c.innerHTML = `
-        <div class="fade-in">
-            <div class="page-header" style="margin-bottom: 2rem;">
-                <h1>Syllabus Tracking (HOD)</h1>
-                <p>Modify syllabus completion status for any subject.</p>
-            </div>
-            
-            <div class="form-group mb-4" style="max-width:400px;">
-                <label class="form-label">Select Subject</label>
-                <select class="form-select" id="hod-syl-select">
-                    <option value="">— Choose a subject —</option>
-                    ${subjects.map(s => `<option value="${s.id}">${s.code} — ${s.name}</option>`).join('')}
-                </select>
-            </div>
-            
-            <div id="hod-syllabus-content"></div>
-        </div>`;
-        
-        document.getElementById('hod-syl-select').addEventListener('change', (e) => {
-            const sId = e.target.value;
-            const container = document.getElementById('hod-syllabus-content');
-            if(!sId) { container.innerHTML = ''; return; }
-            
-            const units = DataStore.getSyllabusUnitsBySubject(sId);
-            container.innerHTML = `
-                <div class="card">
-                    <div class="card-header"><h2>Units</h2></div>
-                    <div class="card-body">
-                        ${units.map(u => `
-                            <div style="display:flex; align-items:center; padding:15px; border-bottom:1px solid var(--border-color);">
-                                <input type="checkbox" id="hod-unit-${u.id}" ${u.isCompleted ? 'checked' : ''} style="width:20px; height:20px; margin-right:15px; cursor:pointer;">
-                                <label for="hod-unit-${u.id}" style="font-size:1.1rem; font-weight:500; cursor:pointer;">${u.title}</label>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-            
-            units.forEach(u => {
-                document.getElementById(`hod-unit-${u.id}`).addEventListener('change', (ev) => {
-                    DataStore.updateSyllabusUnit(u.id, ev.target.checked);
-                    App.showToast('Syllabus updated successfully');
-                });
             });
         });
     }

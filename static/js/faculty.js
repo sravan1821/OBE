@@ -98,18 +98,19 @@ const FacultyModule = (() => {
     /* =================== SYLLABUS TRACKING =================== */
     function renderSyllabus(c) {
         const user = App.getCurrentUser();
-        const subjects = DataStore.getSubjectsByFaculty(user.id);
+        const role = App.getCurrentRole();
+        const subjects = (role === 'faculty') ? DataStore.getSubjectsByFaculty(user.id) : DataStore.getSubjects();
         
         c.innerHTML = `
         <div class="fade-in">
             <div class="page-header" style="margin-bottom: 2rem;">
                 <h1>Syllabus Tracking</h1>
-                <p>Track your syllabus completion status for assigned subjects.</p>
+                <p>${role === 'coordinator' ? 'View syllabus completion status for any subject.' : 'Update syllabus completion status for subjects.'}</p>
             </div>
             
-            <div class="form-group mb-4" style="max-width:300px;">
+            <div class="form-group mb-4" style="max-width:400px;">
                 <label class="form-label">Select Subject</label>
-                <select class="form-select" id="fac-syl-select">
+                <select class="form-select" id="syl-select">
                     <option value="">— Choose a subject —</option>
                     ${subjects.map(s => `<option value="${s.id}">${s.code} — ${s.name}</option>`).join('')}
                 </select>
@@ -118,32 +119,45 @@ const FacultyModule = (() => {
             <div id="syllabus-content"></div>
         </div>`;
         
-        document.getElementById('fac-syl-select').addEventListener('change', (e) => {
+        document.getElementById('syl-select').addEventListener('change', (e) => {
             const sId = e.target.value;
             const container = document.getElementById('syllabus-content');
             if(!sId) { container.innerHTML = ''; return; }
             
             const units = DataStore.getSyllabusUnitsBySubject(sId);
+            const isCoordinator = (role === 'coordinator');
+
             container.innerHTML = `
                 <div class="card">
                     <div class="card-header"><h2>Units</h2></div>
                     <div class="card-body">
                         ${units.map(u => `
-                            <div style="display:flex; align-items:center; padding:15px; border-bottom:1px solid var(--border-color);">
-                                <input type="checkbox" id="unit-${u.id}" ${u.isCompleted ? 'checked' : ''} style="width:20px; height:20px; margin-right:15px; cursor:pointer;">
-                                <label for="unit-${u.id}" style="font-size:1.1rem; font-weight:500; cursor:pointer;">${u.title}</label>
+                            <div style="display:flex; align-items:center; justify-content:space-between; padding:15px; border-bottom:1px solid var(--border-color);">
+                                <div style="display:flex; align-items:center;">
+                                    <input type="checkbox" class="syl-unit-checkbox" data-id="${u.id}" id="unit-${u.id}" ${u.isCompleted ? 'checked' : ''} style="width:20px; height:20px; margin-right:15px; cursor:pointer;" ${isCoordinator ? 'disabled' : ''}>
+                                    <label for="unit-${u.id}" style="font-size:1.1rem; font-weight:500; cursor:pointer;">${u.title}</label>
+                                </div>
+                                ${!isCoordinator ? `<button class="btn btn-success btn-xs btn-save-unit" data-id="${u.id}" data-title="${u.title}">💾 Save</button>` : ''}
                             </div>
                         `).join('')}
                     </div>
                 </div>
             `;
             
-            units.forEach(u => {
-                document.getElementById(`unit-${u.id}`).addEventListener('change', (ev) => {
-                    DataStore.updateSyllabusUnit(u.id, ev.target.checked);
-                    App.showToast('Syllabus updated successfully');
+            if (!isCoordinator) {
+                container.querySelectorAll('.btn-save-unit').forEach(btn => {
+                    btn.addEventListener('click', (ev) => {
+                        const unitId = btn.dataset.id;
+                        const cb = document.getElementById(`unit-${unitId}`);
+                        DataStore.updateSyllabusUnit(unitId, cb.checked);
+                        App.showToast('Unit syllabus updated successfully', 'success');
+                        
+                        // Notify coordinator
+                        const subject = DataStore.getSubjectById(sId);
+                        DataStore.addNotification('coordinator', `Syllabus updated: ${subject ? subject.name : 'Unknown Subject'} - ${btn.dataset.title}`, true);
+                    });
                 });
-            });
+            }
         });
     }
 

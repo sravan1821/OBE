@@ -187,6 +187,13 @@ const DataStore = (() => {
         if(idx>=0) {
             a[idx].isCompleted = isCompleted;
             set(KEYS.syllabusUnits, a);
+            
+            // Auto update subject status %
+            const sId = a[idx].subjectId;
+            const subjectUnits = a.filter(u=>u.subjectId===sId);
+            const completedCount = subjectUnits.filter(u=>u.isCompleted).length;
+            const pct = subjectUnits.length ? Math.round((completedCount / subjectUnits.length) * 100) : 0;
+            setSubjectStatus(sId, pct);
         }
     }
 
