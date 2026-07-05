@@ -469,5 +469,5 @@ const FacultyModule = (() => {
         XLSX.writeFile(wb, `${sub.code}_CO_Attainments.xlsx`);
     }
 
-    return { renderSection, renderMarksEntry };
+    return { renderSection, renderMarksEntry, renderSyllabus };
 })();
