@@ -92,7 +92,9 @@ const App = (() => {
     const NAV = {
         faculty: [
             { id:'dashboard', icon:'📊', label:'My Dashboard' },
-            { id:'marks',     icon:'📝', label:'Enter Marks' }
+            { id:'marks',     icon:'📝', label:'Enter Marks' },
+            { id:'syllabus',  icon:'📖', label:'Syllabus Tracking' },
+            { id:'timetable', icon:'📅', label:'My Timetable' }
         ],
         coordinator: [
             { id:'dashboard', icon:'📊', label:'Dashboard' },
@@ -110,7 +112,8 @@ const App = (() => {
             { id:'faculty',     icon:'👨‍🏫', label:'Manage Faculty' },
             { id:'departments', icon:'🏛️', label:'Departments' },
             { id:'subjects',    icon:'📚', label:'Subjects' },
-            { id:'assignments', icon:'🔗', label:'Assignments' }
+            { id:'assignments', icon:'🔗', label:'Assignments' },
+            { id:'syllabus',    icon:'📖', label:'Syllabus' }
         ]
     };
 
@@ -140,7 +143,13 @@ const App = (() => {
         main.innerHTML = `
             <div class="topbar">
                 <div class="topbar-title">Dashboard Overview</div>
-                <div class="topbar-right">
+                <div class="topbar-right" style="display:flex; align-items:center;">
+                    <div class="notifications-container" style="position:relative; margin-right:1.5rem; cursor:pointer;" onclick="App.toggleNotifications()">
+                        <span style="font-size:1.4rem;">🔔</span>
+                        <span id="notif-badge" class="badge" style="display:none; position:absolute; top:-5px; right:-10px; background:var(--danger); color:white; border-radius:50%; padding:2px 6px; font-size:0.7rem; font-weight:bold;">0</span>
+                        <div id="notif-dropdown" style="display:none; position:absolute; right:-10px; top:40px; width:300px; background:var(--bg-card); box-shadow:var(--shadow-lg); border-radius:8px; z-index:100; border:1px solid var(--border-color); max-height:350px; overflow-y:auto; padding:0; text-align:left;">
+                        </div>
+                    </div>
                     <div class="user-profile">
                         <div class="user-info" style="text-align:right">
                             <div class="user-name">${userName}</div>
@@ -163,6 +172,52 @@ const App = (() => {
         });
 
         document.getElementById('btn-logout').addEventListener('click', logout);
+        refreshNotifications();
+    }
+
+    /* --- Notifications --- */
+    function refreshNotifications() {
+        if (!currentUser) return;
+        const notifs = DataStore.getNotificationsByUser(currentUser.id || currentRole);
+        
+        // Check for urgent unshown alerts
+        const unshownAlerts = notifs.filter(n => n.isAlert && !n.alertShown);
+        unshownAlerts.forEach(n => {
+            showRedAlert(n.message);
+            DataStore.markAlertShown(n.id);
+        });
+
+        const unreadCount = notifs.filter(n => !n.isRead).length;
+        const badge = document.getElementById('notif-badge');
+        
+        if (unreadCount > 0) {
+            badge.textContent = unreadCount;
+            badge.style.display = 'block';
+        } else {
+            badge.style.display = 'none';
+        }
+
+        const drop = document.getElementById('notif-dropdown');
+        if (notifs.length === 0) {
+            drop.innerHTML = '<div style="padding:15px; text-align:center; color:#94A3B8;">No notifications</div>';
+        } else {
+            drop.innerHTML = notifs.map(n => `
+                <div style="padding:12px 15px; border-bottom:1px solid var(--border-color); background:${n.isRead ? 'transparent' : 'rgba(255,255,255,0.05)'}; cursor:pointer;" onclick="App.markNotifRead('${n.id}')">
+                    <div style="font-size:0.9rem; color:var(--text); margin-bottom:4px;">${n.message}</div>
+                    <div style="font-size:0.75rem; color:#64748b;">${new Date(n.createdAt).toLocaleString()}</div>
+                </div>
+            `).join('');
+        }
+    }
+
+    function toggleNotifications() {
+        const drop = document.getElementById('notif-dropdown');
+        drop.style.display = drop.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function markNotifRead(id) {
+        DataStore.markNotificationRead(id);
+        refreshNotifications();
     }
 
     /* --- Load the right module section --- */
@@ -197,8 +252,44 @@ const App = (() => {
         setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 350); }, 3000);
     }
 
+    function showRedAlert(msg) {
+        const overlay = document.createElement('div');
+        overlay.style.position = 'fixed';
+        overlay.style.top = '0'; overlay.style.left = '0';
+        overlay.style.width = '100vw'; overlay.style.height = '100vh';
+        overlay.style.backgroundColor = 'rgba(0,0,0,0.6)';
+        overlay.style.zIndex = '99999';
+        overlay.style.display = 'flex';
+        overlay.style.alignItems = 'center';
+        overlay.style.justifyContent = 'center';
+
+        const modal = document.createElement('div');
+        modal.style.backgroundColor = '#ef4444';
+        modal.style.color = 'white';
+        modal.style.padding = '30px';
+        modal.style.borderRadius = '12px';
+        modal.style.boxShadow = '0 10px 25px rgba(0,0,0,0.5)';
+        modal.style.maxWidth = '400px';
+        modal.style.textAlign = 'center';
+        modal.innerHTML = `
+            <div style="font-size:3rem; margin-bottom:10px;">🚨</div>
+            <h2 style="margin:0 0 10px 0; color:white;">Urgent Notification</h2>
+            <p style="font-size:1.1rem; margin-bottom:20px;">${msg}</p>
+            <button style="background:white; color:#ef4444; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="this.parentElement.parentElement.remove()">Acknowledge</button>
+        `;
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+    }
+
     /* =================== PUBLIC =================== */
-    return { init, getContent, getCurrentUser, getCurrentRole, showToast, logout, loadModule };
+    return { init, getContent, getCurrentUser, getCurrentRole, showToast, logout, loadModule, toggleNotifications, markNotifRead, refreshNotifications, showRedAlert };
 })();
 
 document.addEventListener('DOMContentLoaded', App.init);
+
+// Live update notifications across tabs
+window.addEventListener('storage', (e) => {
+    if (e.key === 'obe_notifications') {
+        App.refreshNotifications();
+    }
+});

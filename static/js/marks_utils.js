@@ -98,7 +98,10 @@ const MarksUtils = (() => {
                     <h2>${sub.code} — ${sub.name}</h2>
                     <div class="text-sm text-muted mt-1">Faculty: ${fac?fac.name:'Unassigned'} &bull; Semester ${sub.semester} &bull; ${students.length} students</div>
                 </div>
-                ${editable ? '<button class="btn btn-success" id="save-marks-btn">💾 Save All Marks</button>' : ''}
+                <div style="display:flex; gap:10px;">
+                    ${editable ? '<button class="btn btn-warning" id="notify-marks-btn">🔔 Send Notification</button>' : ''}
+                    ${editable ? '<button class="btn btn-success" id="save-marks-btn">💾 Save All Marks</button>' : ''}
+                </div>
             </div>
             <div class="card-body" style="padding:0.6rem">
                 <div style="background:rgba(79,106,255,0.05);border:1px solid rgba(79,106,255,0.1);border-radius:8px;padding:0.5rem 0.8rem;margin-bottom:0.8rem;font-size:0.75rem;color:var(--text-secondary);">
@@ -145,6 +148,30 @@ const MarksUtils = (() => {
 
         const saveBtn = container.querySelector('#save-marks-btn');
         if (saveBtn) saveBtn.addEventListener('click', () => saveMarks(container, subjectId));
+
+        const notifyBtn = container.querySelector('#notify-marks-btn');
+        if (notifyBtn) {
+            notifyBtn.addEventListener('click', () => {
+                const msg = prompt('Enter urgent red pop-up notification message:');
+                if (msg) {
+                    const currentRole = App.getCurrentRole();
+                    if (currentRole === 'faculty') {
+                        DataStore.addNotification('hod', msg, true);
+                        DataStore.addNotification('coordinator', msg, true);
+                        DataStore.addNotification('management', msg, true);
+                    } else if (currentRole === 'coordinator') {
+                        const sub = DataStore.getSubjectById(subjectId);
+                        if (sub && sub.facultyId) DataStore.addNotification(sub.facultyId, msg, true);
+                        DataStore.addNotification('hod', msg, true);
+                    } else if (currentRole === 'hod' || currentRole === 'management') {
+                        const sub = DataStore.getSubjectById(subjectId);
+                        if (sub && sub.facultyId) DataStore.addNotification(sub.facultyId, msg, true);
+                        DataStore.addNotification('coordinator', msg, true);
+                    }
+                    App.showToast('Urgent alert sent successfully!', 'success');
+                }
+            });
+        }
     }
 
     function recalcRow(container, stuId) {
@@ -200,6 +227,16 @@ const MarksUtils = (() => {
         });
         DataStore.saveBulkMarks(subjectId, bulk);
         App.showToast('All marks saved successfully!', 'success');
+
+        const currentUser = App.getCurrentUser();
+        const currentRole = App.getCurrentRole();
+        if (currentRole === 'faculty') {
+            const sub = DataStore.getSubjectById(subjectId);
+            const msg = `Marks for ${sub ? sub.name : 'a subject'} were updated by ${currentUser ? currentUser.name : 'Faculty'}.`;
+            DataStore.addNotification('hod', msg, true);
+            DataStore.addNotification('coordinator', msg, true);
+            DataStore.addNotification('management', msg, true);
+        }
     }
 
     return { calcMid, calcFinal, renderTable, bindEvents, r2 };

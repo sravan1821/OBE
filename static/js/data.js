@@ -11,6 +11,8 @@ const DataStore = (() => {
         timetable:        'obe_timetable',
         subjectStatus:    'obe_subject_status',
         markVerification: 'obe_mark_verification',
+        syllabusUnits:    'obe_syllabus_units',
+        notifications:    'obe_notifications',
         initialized:      'obe_initialized'
     };
 
@@ -69,6 +71,16 @@ const DataStore = (() => {
         set(KEYS.timetable, []);
         set(KEYS.subjectStatus, {});
         set(KEYS.markVerification, {});
+        
+        const syllabusUnits = [];
+        subjects.forEach(s => {
+            for(let i=1; i<=5; i++) {
+                syllabusUnits.push({ id: genId(), subjectId: s.id, unitNumber: i, title: `Unit ${i} - ${s.name} Concepts`, isCompleted: false });
+            }
+        });
+        set(KEYS.syllabusUnits, syllabusUnits);
+        set(KEYS.notifications, []);
+        
         localStorage.setItem(KEYS.initialized, 'true');
     }
 
@@ -166,6 +178,43 @@ const DataStore = (() => {
     function isMarksVerified(sId)          { const o=getMarkVerification(); return !!(o[sId]&&o[sId].verified); }
     function getVerificationDetails(sId)   { return getMarkVerification()[sId] || null; }
 
+    /* ================== SYLLABUS UNITS ================== */
+    function getSyllabusUnits() { return get(KEYS.syllabusUnits); }
+    function getSyllabusUnitsBySubject(sId) { return getSyllabusUnits().filter(u=>u.subjectId===sId).sort((a,b)=>a.unitNumber-b.unitNumber); }
+    function updateSyllabusUnit(id, isCompleted) {
+        const a = getSyllabusUnits();
+        const idx = a.findIndex(u=>u.id===id);
+        if(idx>=0) {
+            a[idx].isCompleted = isCompleted;
+            set(KEYS.syllabusUnits, a);
+        }
+    }
+
+    /* ================== NOTIFICATIONS ================== */
+    function getNotifications() { return get(KEYS.notifications); }
+    function getNotificationsByUser(userId) { return getNotifications().filter(n=>n.userId===userId).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)); }
+    function addNotification(userId, message, isAlert = false) {
+        const a = getNotifications();
+        a.push({ id: genId(), userId, message, isRead: false, isAlert: !!isAlert, alertShown: false, createdAt: new Date().toISOString() });
+        set(KEYS.notifications, a);
+    }
+    function markNotificationRead(id) {
+        const a = getNotifications();
+        const idx = a.findIndex(n=>n.id===id);
+        if(idx>=0) {
+            a[idx].isRead = true;
+            set(KEYS.notifications, a);
+        }
+    }
+    function markAlertShown(id) {
+        const a = getNotifications();
+        const idx = a.findIndex(n=>n.id===id);
+        if(idx>=0) {
+            a[idx].alertShown = true;
+            set(KEYS.notifications, a);
+        }
+    }
+
     /* ================== AUTH ================== */
     function authenticate(username, password, role) {
         if (role === 'faculty') {
@@ -195,8 +244,15 @@ const DataStore = (() => {
         getTimetable, addTimetableEntry, deleteTimetableEntry, getTimetableByFaculty, clearTimetable,
         getSubjectStatus, getSubjectStatusById, setSubjectStatus,
         getMarkVerification, verifyMarks, isMarksVerified, getVerificationDetails,
+        getSyllabusUnits, getSyllabusUnitsBySubject, updateSyllabusUnit,
+        getNotifications, getNotificationsByUser, addNotification, markNotificationRead, markAlertShown,
         authenticate
     };
 })();
 
 DataStore.init();
+
+// Auto-migrate missing new keys for existing sessions
+if (!localStorage.getItem('obe_syllabus_units')) {
+    DataStore.reset();
+}

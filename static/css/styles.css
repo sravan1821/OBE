@@ -66,6 +66,7 @@ input, select { font-family: inherit; }
 .college-name { font-size: 3.5rem; letter-spacing: -1px; margin-bottom: 0.5rem; }
 .college-name span { color: var(--danger); }
 .hero-subtitle { font-size: 1.1rem; color: #94A3B8; max-width: 500px; margin: 0 auto 2rem; }
+.login-footer { margin-top: 4rem; font-size: 0.9rem; color: #64748b; }
 
 /* Login Modal (Always visible in center now instead of a popup) */
 .modal { display: none; }

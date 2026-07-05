@@ -162,7 +162,12 @@ const ManagementModule = (() => {
                                     if (!entered) {
                                         statusBadge = '<span class="badge" style="background:var(--danger);color:white">Not Entered</span>';
                                         filterTag = 'pending';
-                                        actionsHTML = '<span class="text-muted text-sm">Waiting for Faculty</span>';
+                                        actionsHTML = `
+                                            <div class="flex gap-sm">
+                                                <span class="text-muted text-sm" style="margin-right:10px;">Waiting for Faculty</span>
+                                                <button class="btn btn-warning btn-xs notify-btn" data-fid="${s.facultyId}">🔔 Send Notification</button>
+                                            </div>
+                                        `;
                                     } else {
                                         let verStatus = '';
                                         if (vd && vd.verified) {
@@ -183,6 +188,7 @@ const ManagementModule = (() => {
                                                 <button class="btn btn-primary btn-xs view-marks" data-subject="${s.id}">📋 View</button>
                                                 <button class="btn btn-success btn-xs approve-btn" data-subject="${s.id}">✓ Approve</button>
                                                 <button class="btn btn-danger btn-xs reject-btn" data-subject="${s.id}">✗ Reject</button>
+                                                <button class="btn btn-warning btn-xs notify-btn" data-subject="${s.id}" data-fid="${s.facultyId}">🔔 Send Notification</button>
                                             </div>
                                         `;
                                     }
@@ -242,6 +248,19 @@ const ManagementModule = (() => {
                     DataStore.verifyMarks(btn.dataset.subject, { verified: false, remarks: remarks || 'Rejected by Management' });
                     App.showToast('Marks rejected.', 'error');
                     renderVerify(c);
+                }
+            });
+        });
+
+        /* Notify */
+        c.querySelectorAll('.notify-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const msg = prompt('Enter notification message to send to Faculty, Coordinator, and HOD:');
+                if (msg) {
+                    if (btn.dataset.fid) DataStore.addNotification(btn.dataset.fid, msg, true);
+                    DataStore.addNotification('coordinator', msg, true);
+                    DataStore.addNotification('hod', msg, true);
+                    App.showToast('Urgent alert sent to Faculty, Coordinator, and HOD!', 'success');
                 }
             });
         });

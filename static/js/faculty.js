@@ -9,6 +9,8 @@ const FacultyModule = (() => {
         switch (section) {
             case 'dashboard': renderDashboard(c); break;
             case 'marks':     renderMarksEntry(c); break;
+            case 'syllabus':  renderSyllabus(c); break;
+            case 'timetable': renderTimetable(c); break;
             default:          renderDashboard(c);
         }
     }
@@ -93,10 +95,100 @@ const FacultyModule = (() => {
         </div>`;
     }
 
+    /* =================== SYLLABUS TRACKING =================== */
+    function renderSyllabus(c) {
+        const user = App.getCurrentUser();
+        const subjects = DataStore.getSubjectsByFaculty(user.id);
+        
+        c.innerHTML = `
+        <div class="fade-in">
+            <div class="page-header" style="margin-bottom: 2rem;">
+                <h1>Syllabus Tracking</h1>
+                <p>Track your syllabus completion status for assigned subjects.</p>
+            </div>
+            
+            <div class="form-group mb-4" style="max-width:300px;">
+                <label class="form-label">Select Subject</label>
+                <select class="form-select" id="fac-syl-select">
+                    <option value="">— Choose a subject —</option>
+                    ${subjects.map(s => `<option value="${s.id}">${s.code} — ${s.name}</option>`).join('')}
+                </select>
+            </div>
+            
+            <div id="syllabus-content"></div>
+        </div>`;
+        
+        document.getElementById('fac-syl-select').addEventListener('change', (e) => {
+            const sId = e.target.value;
+            const container = document.getElementById('syllabus-content');
+            if(!sId) { container.innerHTML = ''; return; }
+            
+            const units = DataStore.getSyllabusUnitsBySubject(sId);
+            container.innerHTML = `
+                <div class="card">
+                    <div class="card-header"><h2>Units</h2></div>
+                    <div class="card-body">
+                        ${units.map(u => `
+                            <div style="display:flex; align-items:center; padding:15px; border-bottom:1px solid var(--border-color);">
+                                <input type="checkbox" id="unit-${u.id}" ${u.isCompleted ? 'checked' : ''} style="width:20px; height:20px; margin-right:15px; cursor:pointer;">
+                                <label for="unit-${u.id}" style="font-size:1.1rem; font-weight:500; cursor:pointer;">${u.title}</label>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            units.forEach(u => {
+                document.getElementById(`unit-${u.id}`).addEventListener('change', (ev) => {
+                    DataStore.updateSyllabusUnit(u.id, ev.target.checked);
+                    App.showToast('Syllabus updated successfully');
+                });
+            });
+        });
+    }
+
+    /* =================== TIMETABLE =================== */
+    function renderTimetable(c) {
+        const user = App.getCurrentUser();
+        const timetable = DataStore.getTimetableByFaculty(user.id);
+        const subjects = DataStore.getSubjectsByFaculty(user.id);
+        
+        c.innerHTML = `
+        <div class="fade-in">
+            <div class="page-header" style="margin-bottom: 2rem;">
+                <h1>My Timetable</h1>
+                <p>View your assigned classes schedule.</p>
+            </div>
+            
+            <div class="card">
+                <div class="card-header"><h2>Schedule</h2></div>
+                <div class="card-body no-pad">
+                    <table class="table">
+                        <thead>
+                            <tr><th>Day</th><th>Period</th><th>Subject</th></tr>
+                        </thead>
+                        <tbody>
+                            ${timetable.length === 0 ? '<tr><td colspan="3" style="text-align:center;">No timetable assigned yet.</td></tr>' : ''}
+                            ${timetable.sort((a,b)=>a.day.localeCompare(b.day)).map(t => {
+                                const sub = subjects.find(s=>s.id===t.subjectId);
+                                return `<tr>
+                                    <td class="fw-600">${t.day}</td>
+                                    <td><span class="badge badge-info">${t.period}</span></td>
+                                    <td>${sub ? sub.name : 'Unknown'}</td>
+                                </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>`;
+    }
+
     /* =================== EXCEL MARK ENTRY =================== */
     function renderMarksEntry(c) {
         const user = App.getCurrentUser();
-        const subjects = DataStore.getSubjectsByFaculty(user.id);
+        const role = App.getCurrentRole();
+        const subjects = (role === 'faculty') ? DataStore.getSubjectsByFaculty(user.id) : DataStore.getSubjects();
 
         c.innerHTML = `
         <div class="fade-in">
@@ -125,9 +217,10 @@ const FacultyModule = (() => {
                         </div>
                         <div id="upload-status" style="margin-top: 1rem; text-align: center; font-weight: 600;"></div>
                         
-                        <div style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                        <div style="margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
                             <button id="btn-process-save" class="btn-primary" style="display:none;">Process & Save to DataStore</button>
                             <button id="btn-download-co" class="btn-primary" style="display:none; background: var(--success);">Download CO Attainment</button>
+                            <button id="btn-notify-hod" class="btn-warning" style="display:none;">🔔 Send Notification</button>
                         </div>
                     </div>
                 </div>
@@ -143,6 +236,7 @@ const FacultyModule = (() => {
         const status = document.getElementById('upload-status');
         const btnProcess = document.getElementById('btn-process-save');
         const btnDownload = document.getElementById('btn-download-co');
+        const btnNotify = document.getElementById('btn-notify-hod');
 
         select.addEventListener('change', (e) => {
             if (e.target.value) {
@@ -156,6 +250,7 @@ const FacultyModule = (() => {
             status.textContent = '';
             btnProcess.style.display = 'none';
             btnDownload.style.display = 'none';
+            btnNotify.style.display = 'none';
         });
 
         dropZone.addEventListener('click', () => fileInput.click());
@@ -198,9 +293,21 @@ const FacultyModule = (() => {
             DataStore.saveBulkMarks(subjectId, parsedData);
             App.showToast('Marks processed and saved to DataStore successfully!', 'success');
             
+            btnNotify.style.display = 'block';
+
             // Generate CO Data to allow download
             btnProcess.style.display = 'none';
             btnDownload.style.display = 'block';
+        });
+
+        btnNotify.addEventListener('click', () => {
+            const msg = prompt('Enter notification message to send to HOD, Coordinator, and Management:');
+            if (msg) {
+                DataStore.addNotification('hod', msg, true);
+                DataStore.addNotification('coordinator', msg, true);
+                DataStore.addNotification('management', msg, true);
+                App.showToast('Urgent alert sent to HOD, Coordinator, and Management!', 'success');
+            }
         });
 
         btnDownload.addEventListener('click', () => {
@@ -348,5 +455,5 @@ const FacultyModule = (() => {
         XLSX.writeFile(wb, `${sub.code}_CO_Attainments.xlsx`);
     }
 
-    return { renderSection };
+    return { renderSection, renderMarksEntry };
 })();

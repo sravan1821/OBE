@@ -7,44 +7,11 @@ const CoordinatorModule = (() => {
         const c = App.getContent();
         switch (section) {
             case 'dashboard':  renderDashboard(c); break;
-            case 'marks':      renderMarksEntry(c); break;
+            case 'marks':      FacultyModule.renderMarksEntry(c); break;
             case 'timetable':  renderTimetable(c); break;
             case 'status':     renderSubjectStatus(c); break;
             default:           renderDashboard(c);
         }
-    }
-
-    /* =================== MARKS ENTRY (editable) =================== */
-    function renderMarksEntry(c) {
-        const subjects = DataStore.getSubjects();
-        c.innerHTML = `
-        <div class="fade-in">
-            <div class="page-header">
-                <h1>Edit Internal Marks</h1>
-                <p>Select any subject to enter/modify MID-I & MID-II marks</p>
-            </div>
-            <div class="card">
-                <div class="card-header"><h2>Select Subject</h2></div>
-                <div class="card-body">
-                    <div class="form-group" style="max-width:400px;">
-                        <select class="form-select" id="coord-marks-select">
-                            <option value="">— Choose a subject —</option>
-                            ${subjects.map(s => `<option value="${s.id}">${s.code} — ${s.name} (Sem ${s.semester})</option>`).join('')}
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div id="coord-marks-container"></div>
-        </div>`;
-
-        document.getElementById('coord-marks-select').addEventListener('change', (e) => {
-            const container = document.getElementById('coord-marks-container');
-            const subjectId = e.target.value;
-            if (subjectId) {
-                container.innerHTML = MarksUtils.renderTable(subjectId, true);
-                MarksUtils.bindEvents(container, subjectId);
-            } else { container.innerHTML = ''; }
-        });
     }
 
     /* =================== DASHBOARD =================== */
@@ -338,7 +305,7 @@ const CoordinatorModule = (() => {
         <div class="fade-in">
             <div class="page-header">
                 <h1>Subject Status Tracker</h1>
-                <p>Track syllabus completion and mark entry status for every subject</p>
+                <p>Verify syllabus completion and mark entry status. Send notifications to faculty if necessary.</p>
             </div>
 
             <div class="card">
@@ -350,12 +317,14 @@ const CoordinatorModule = (() => {
                     <div class="table-wrapper">
                         <table class="table">
                             <thead><tr>
-                                <th>Code</th><th>Subject</th><th>Faculty</th><th>Completion %</th><th>Marks Status</th><th>Update</th>
+                                <th>Code</th><th>Subject</th><th>Faculty</th><th>Syllabus Status</th><th>Marks Status</th><th>Actions</th>
                             </tr></thead>
                             <tbody>
                                 ${subjects.map(s => {
                                     const fac = s.facultyId ? DataStore.getFacultyById(s.facultyId) : null;
-                                    const pct = DataStore.getSubjectStatusById(s.id);
+                                    const units = DataStore.getSyllabusUnitsBySubject(s.id);
+                                    const comp = units.filter(u=>u.isCompleted).length;
+                                    const pct = units.length ? Math.round((comp / units.length) * 100) : 0;
                                     const entered = DataStore.areMarksEntered(s.id);
                                     const pClass = pct < 40 ? 'low' : pct < 75 ? 'medium' : 'high';
                                     return `<tr>
@@ -364,21 +333,22 @@ const CoordinatorModule = (() => {
                                         <td>${fac ? fac.name : '<span class="text-muted">—</span>'}</td>
                                         <td style="min-width:180px">
                                             <div class="flex gap-sm" style="align-items:center">
-                                                <input type="range" min="0" max="100" value="${pct}"
-                                                    class="status-slider" data-subject="${s.id}"
-                                                    style="flex:1;accent-color:var(--accent)">
-                                                <span class="status-pct fw-600" data-subject="${s.id}" style="width:42px;text-align:right">${pct}%</span>
+                                                <span class="status-pct fw-600">${pct}% Completed</span>
                                             </div>
-                                            <div class="progress-bar mt-1"><div class="progress-fill ${pClass}" style="width:${pct}%" data-bar="${s.id}"></div></div>
+                                            <div class="progress-bar mt-1"><div class="progress-fill ${pClass}" style="width:${pct}%"></div></div>
+                                            <div style="font-size:0.8rem; color:var(--text-muted); margin-top:5px;">${comp} / ${units.length} Units Done</div>
                                         </td>
                                         <td>
                                             <span class="status-dot ${entered?'green':'red'}"></span>
                                             ${entered
                                                 ? '<span class="badge badge-success">✓ Entered</span>'
-                                                : '<span class="badge badge-danger">✗ Not Entered</span>'}
-                                        </td>
+                                                : '<span class="badge badge-danger">✗ Pending</span>'}
                                         <td>
-                                            <button class="btn btn-primary btn-xs status-save" data-subject="${s.id}">Save</button>
+                                            <div style="display:flex; flex-direction:column; gap:5px;">
+                                                ${!entered && s.facultyId ? `<button class="btn btn-danger btn-xs btn-notify" data-fid="${s.facultyId}" data-msg="Mid marks for ${s.name} are pending. Please enter them immediately.">Send Notification (Marks)</button>` : ''}
+                                                ${pct < 100 && s.facultyId ? `<button class="btn btn-warning btn-xs btn-notify" data-fid="${s.facultyId}" data-msg="Your syllabus completion for ${s.name} is behind schedule. Please update it.">Send Notification (Syllabus)</button>` : ''}
+                                                ${s.facultyId ? `<button class="btn btn-primary btn-xs btn-notify-custom" data-fid="${s.facultyId}">Send Notification</button>` : ''}
+                                            </div>
                                         </td>
                                     </tr>`;
                                 }).join('')}
@@ -387,43 +357,27 @@ const CoordinatorModule = (() => {
                     </div>
                 </div>
             </div>
-
-            <!-- Legend -->
-            <div class="card">
-                <div class="card-body">
-                    <div class="flex gap-md" style="flex-wrap:wrap;font-size:0.85rem;">
-                        <span><span class="status-dot green"></span> Marks Entered (Green)</span>
-                        <span><span class="status-dot red"></span> Marks Not Entered (Red — needs attention)</span>
-                    </div>
-                </div>
-            </div>
         </div>`;
 
-        /* Live slider update */
-        c.querySelectorAll('.status-slider').forEach(slider => {
-            slider.addEventListener('input', () => {
-                const sId = slider.dataset.subject;
-                const val = parseInt(slider.value);
-                const lbl = c.querySelector(`.status-pct[data-subject="${sId}"]`);
-                const bar = c.querySelector(`[data-bar="${sId}"]`);
-                if (lbl) lbl.textContent = val + '%';
-                if (bar) {
-                    bar.style.width = val + '%';
-                    bar.className = 'progress-fill ' + (val < 40 ? 'low' : val < 75 ? 'medium' : 'high');
+        c.querySelectorAll('.btn-notify').forEach(btn => {
+            btn.addEventListener('click', () => {
+                DataStore.addNotification(btn.dataset.fid, btn.dataset.msg, true);
+                App.showToast('Urgent notification sent to faculty!', 'success');
+            });
+        });
+
+        c.querySelectorAll('.btn-notify-custom').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const msg = prompt('Enter the red pop-up notification message to send to this Faculty:');
+                if (msg) {
+                    DataStore.addNotification(btn.dataset.fid, msg, true);
+                    App.showToast('Custom red popup sent to faculty!', 'success');
                 }
             });
         });
-
-        /* Save button */
-        c.querySelectorAll('.status-save').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const sId = btn.dataset.subject;
-                const slider = c.querySelector(`.status-slider[data-subject="${sId}"]`);
-                DataStore.setSubjectStatus(sId, parseInt(slider.value));
-                App.showToast('Completion status updated!', 'success');
-            });
-        });
     }
+
+
 
     /* =================== PUBLIC =================== */
     return { renderSection };
