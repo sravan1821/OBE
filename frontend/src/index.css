@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+@theme {
+  --color-mic-red: #cf2c31;
+  --color-mic-red-dark: #a82025;
+  --color-mic-navy: #172f41;
+  --color-mic-navy-light: #21425c;
+  --color-mic-blue: #2da5eb;
+  
+  --color-bg-main: #F8F9FA;
+  
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-heading: 'Outfit', sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-bg-main text-slate-800 antialiased font-sans;
+  }
+}

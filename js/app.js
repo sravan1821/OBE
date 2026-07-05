@@ -117,21 +117,15 @@ const App = (() => {
     function renderSidebar() {
         const items = NAV[currentRole] || [];
         const sidebar = document.getElementById('sidebar');
+        const main = document.getElementById('main-content');
         const userName = currentUser.name || currentRole;
 
         sidebar.innerHTML = `
             <div class="sidebar-header">
                 <div class="sidebar-logo">OBE MicTech</div>
-                <div class="sidebar-role">${(currentRole || '').toUpperCase()}</div>
-            </div>
-            <div class="sidebar-user">
-                <div class="user-avatar">${userName[0].toUpperCase()}</div>
-                <div>
-                    <div class="user-name">${userName}</div>
-                    <div class="user-role">${roleLabels[currentRole]}</div>
-                </div>
             </div>
             <nav class="sidebar-nav">
+                <div style="padding-bottom:10px; font-size:12px; color:rgba(255,255,255,0.4); text-transform:uppercase; font-weight:700;">Menu</div>
                 ${items.map((it, i) => `
                     <a href="#" class="nav-item ${i===0?'active':''}" data-section="${it.id}">
                         <span class="nav-icon">${it.icon}</span>
@@ -141,6 +135,23 @@ const App = (() => {
             <div class="sidebar-footer">
                 <button class="btn-logout" id="btn-logout"><span>🚪</span> Logout</button>
             </div>`;
+
+        // Render Topbar and Content Wrapper
+        main.innerHTML = `
+            <div class="topbar">
+                <div class="topbar-title">Dashboard Overview</div>
+                <div class="topbar-right">
+                    <div class="user-profile">
+                        <div class="user-info" style="text-align:right">
+                            <div class="user-name">${userName}</div>
+                            <div class="user-role">${roleLabels[currentRole]}</div>
+                        </div>
+                        <div class="user-avatar">${userName[0].toUpperCase()}</div>
+                    </div>
+                </div>
+            </div>
+            <div id="page-content" class="page-content"></div>
+        `;
 
         sidebar.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', e => {
@@ -173,7 +184,7 @@ const App = (() => {
     }
 
     /* =================== HELPERS =================== */
-    function getContent()     { return document.getElementById('main-content'); }
+    function getContent()     { return document.getElementById('page-content'); }
     function getCurrentUser() { return currentUser; }
     function getCurrentRole() { return currentRole; }
 

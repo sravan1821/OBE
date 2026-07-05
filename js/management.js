@@ -153,14 +153,39 @@ const ManagementModule = (() => {
                             <tbody id="verify-tbody">
                                 ${subjects.map(s => {
                                     const entered = DataStore.areMarksEntered(s.id);
-                                    if (!entered) return '';
                                     const fac = s.facultyId ? DataStore.getFacultyById(s.facultyId) : null;
                                     const dept = DataStore.getDepartmentById(s.departmentId);
                                     const vd = mv[s.id];
                                     let statusBadge, filterTag;
-                                    if (vd && vd.verified)      { statusBadge = '<span class="verify-badge verified">✓ Verified</span>'; filterTag = 'verified'; }
-                                    else if (vd && !vd.verified) { statusBadge = '<span class="verify-badge rejected">✗ Rejected</span>'; filterTag = 'rejected'; }
-                                    else                         { statusBadge = '<span class="verify-badge unverified">⏳ Pending</span>'; filterTag = 'pending'; }
+                                    let actionsHTML = '';
+
+                                    if (!entered) {
+                                        statusBadge = '<span class="badge" style="background:var(--danger);color:white">Not Entered</span>';
+                                        filterTag = 'pending';
+                                        actionsHTML = '<span class="text-muted text-sm">Waiting for Faculty</span>';
+                                    } else {
+                                        let verStatus = '';
+                                        if (vd && vd.verified) {
+                                            verStatus = '<span class="verify-badge verified">✓ Verified</span>';
+                                            filterTag = 'verified';
+                                        } else if (vd && !vd.verified) {
+                                            verStatus = '<span class="verify-badge rejected">✗ Rejected</span>';
+                                            filterTag = 'rejected';
+                                        } else {
+                                            verStatus = '<span class="verify-badge unverified">⏳ Pending</span>';
+                                            filterTag = 'pending';
+                                        }
+
+                                        statusBadge = `<span class="badge" style="background:var(--success);color:white;margin-right:0.5rem">Work Done</span> ${verStatus}`;
+                                        
+                                        actionsHTML = `
+                                            <div class="flex gap-sm">
+                                                <button class="btn btn-primary btn-xs view-marks" data-subject="${s.id}">📋 View</button>
+                                                <button class="btn btn-success btn-xs approve-btn" data-subject="${s.id}">✓ Approve</button>
+                                                <button class="btn btn-danger btn-xs reject-btn" data-subject="${s.id}">✗ Reject</button>
+                                            </div>
+                                        `;
+                                    }
 
                                     return `<tr class="verify-row" data-status="${filterTag}" data-subject="${s.id}">
                                         <td><span class="badge badge-info">${s.code}</span></td>
@@ -168,13 +193,7 @@ const ManagementModule = (() => {
                                         <td>${dept ? dept.name : '—'}</td>
                                         <td>${fac ? fac.name : '—'}</td>
                                         <td>${statusBadge}</td>
-                                        <td>
-                                            <div class="flex gap-sm">
-                                                <button class="btn btn-primary btn-xs view-marks" data-subject="${s.id}">📋 View</button>
-                                                <button class="btn btn-success btn-xs approve-btn" data-subject="${s.id}">✓ Approve</button>
-                                                <button class="btn btn-danger btn-xs reject-btn" data-subject="${s.id}">✗ Reject</button>
-                                            </div>
-                                        </td>
+                                        <td>${actionsHTML}</td>
                                     </tr>`;
                                 }).join('')}
                             </tbody>

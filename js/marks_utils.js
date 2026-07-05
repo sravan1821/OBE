@@ -13,19 +13,34 @@ const MarksUtils = (() => {
 
     function calcMid(d) {
         if (!d) d = {};
-        const qs = ['q1','q2','q3','q4','q5','q6'].map(k => Number(d[k]) || 0);
-        const best3 = [...qs].sort((a,b) => b - a);
-        const desc = best3[0] + best3[1] + best3[2];               // max 30
-        const ut   = Number(d.unitTest) || 0;                       // max 20
-        const asgn = Number(d.assignment) || 0;                     // max 10
-        const sDesc = r2((desc / 30) * 15);
-        const sUT   = r2((ut / 20) * 10);
-        const sAsgn = r2((asgn / 10) * 5);
-        return { desc, ut, asgn, sDesc, sUT, sAsgn, total: r2(sDesc + sUT + sAsgn) };
+        const q1 = Number(d.q1) || 0, q2 = Number(d.q2) || 0;
+        const q3 = Number(d.q3) || 0, q4 = Number(d.q4) || 0;
+        const q5 = Number(d.q5) || 0, q6 = Number(d.q6) || 0;
+        
+        // Formula 1: Desc = MAX(Q1,Q2) + MAX(Q3,Q4) + MAX(Q5,Q6)
+        const desc = Math.max(q1, q2) + Math.max(q3, q4) + Math.max(q5, q6);
+        
+        // Formula 2 & 3: ROUNDUP for internal scaling
+        const sDesc = Math.ceil(desc / 2); // Max 15
+        
+        const ut = Number(d.unitTest) || 0;
+        const sUT = Math.ceil(ut / 2); // Max 10
+        
+        const asgn = Number(d.assignment) || 0;
+        const sAsgn = asgn; // Max 5 (or max 10 depending on input, but based on Image 1 assignment is out of 5 usually? Let's not scale assignment if they enter 5. Wait, in Image 1 it's 5 max. So no scaling needed.)
+        
+        // Formula 4: MID-I marks = sDesc + sUT + sAsgn
+        const total = sDesc + sUT + sAsgn;
+        
+        return { desc, ut, asgn, sDesc, sUT, sAsgn, total };
     }
 
     function calcFinal(m1d, m2d) {
-        return r2((calcMid(m1d).total + calcMid(m2d).total) / 2);
+        const mid1 = calcMid(m1d).total;
+        const mid2 = calcMid(m2d).total;
+        // Formula 5: Final Internal = ROUNDUP( MAX*80% + MIN*20% )
+        const finalMark = Math.ceil( (Math.max(mid1, mid2) * 0.8) + (Math.min(mid1, mid2) * 0.2) );
+        return finalMark;
     }
 
     /* ---------- Render full marks table ---------- */
