@@ -10,6 +10,7 @@ const CoordinatorModule = (() => {
             case 'marks':      FacultyModule.renderMarksEntry(c); break;
             case 'timetable':  renderTimetable(c); break;
             case 'status':     renderSubjectStatus(c); break;
+            case 'syllabus':   FacultyModule.renderSyllabus(c); break;
             default:           renderDashboard(c);
         }
     }
