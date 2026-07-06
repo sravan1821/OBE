@@ -321,13 +321,14 @@ const FacultyModule = (() => {
         btnDownload.addEventListener('click', () => {
             const subjectId = select.value;
             if (!subjectId || !parsedData) return;
-            downloadCOExcel(subjectId, parsedData);
+            const regulation = document.getElementById('fac-reg-select').value;
+            downloadCOExcel(subjectId, parsedData, regulation);
         });
     }
 
     function parseMarksSheet(rows, regulation) {
         const bulk = {};
-        for (let i = 12; i < rows.length; i++) {
+        for (let i = 10; i < rows.length; i++) {
             const row = rows[i];
             if (!row || !row[1]) continue; 
             
@@ -349,15 +350,16 @@ const FacultyModule = (() => {
             let finalInternal = 0;
 
             if (regulation === 'MIC23') {
+                // MIC23 format 
                 m1 = {
-                    co1: val(3), co2: val(4), co3: val(5),
-                    unitTest: val(10), assignment: val(11)
+                    co1: val(2), co2: val(3), co3: val(4),
+                    unitTest: val(9), assignment: val(10)
                 };
                 m1.internal = calculateMIC23Internal(m1);
                 
                 m2 = {
-                    co3: val(13), co4: val(14), co5: val(15),
-                    unitTest: val(20), assignment: val(21)
+                    co3: val(14), co4: val(15), co5: val(16),
+                    unitTest: val(21), assignment: val(22)
                 };
                 m2.internal = calculateMIC23Internal(m2);
 
@@ -365,14 +367,14 @@ const FacultyModule = (() => {
                 const minMid = Math.min(m1.internal, m2.internal);
                 finalInternal = (0.8 * maxMid) + (0.2 * minMid);
             } else {
-                // MIC20
+                // MIC20 format (Turbo machines)
                 m1 = {
-                    q1: val(3), q2: val(4), q3: val(5), q4: val(6), q5: val(7), q6: val(8),
-                    unitTest: val(10), assignment: val(11)
+                    q1: val(2), q2: val(3), q3: val(4),
+                    unitTest: val(5), assignment: val(6)
                 };
                 m2 = {
-                    q1: val(13), q2: val(14), q3: val(15), q4: val(16), q5: val(17), q6: val(18),
-                    unitTest: val(20), assignment: val(21)
+                    q1: val(7), q2: val(8), q3: val(9),
+                    unitTest: val(10), assignment: val(11)
                 };
             }
 
@@ -389,7 +391,7 @@ const FacultyModule = (() => {
         return (chapterSum / 2) + ((m.unitTest || 0) / 2) + (m.assignment || 0);
     }
 
-    function downloadCOExcel(subjectId, marksData) {
+    function downloadCOExcel(subjectId, marksData, regulation) {
         const sub = DataStore.getSubjectById(subjectId);
         const stus = DataStore.getStudentsByDeptAndSemester(sub.departmentId, sub.semester);
         
@@ -400,26 +402,45 @@ const FacultyModule = (() => {
             const m = marksData[st.id] || { mid1:{}, mid2:{} };
             const m1 = m.mid1, m2 = m.mid2;
             
-            // Apply University formula mapping: Max pairs divided by 2 (ROUNDUP)
-            const m1_q1 = Math.ceil(Math.max(m1.q1||0, m1.q2||0) / 2);
-            const m1_q2 = Math.ceil(Math.max(m1.q3||0, m1.q4||0) / 2);
-            const m1_q3 = Math.ceil(Math.max(m1.q5||0, m1.q6||0) / 2);
-            const m1_quiz = Math.ceil((m1.unitTest||0) / 2);
+            const m1_q1 = m1.q1||0;
+            const m1_q2 = m1.q2||0;
+            const m1_q3 = m1.q3||0;
+            const m1_quiz = m1.unitTest||0;
             const m1_asgn = m1.assignment||0;
 
-            const m2_q1 = Math.ceil(Math.max(m2.q1||0, m2.q2||0) / 2);
-            const m2_q2 = Math.ceil(Math.max(m2.q3||0, m2.q4||0) / 2);
-            const m2_q3 = Math.ceil(Math.max(m2.q5||0, m2.q6||0) / 2);
-            const m2_quiz = Math.ceil((m2.unitTest||0) / 2);
+            const m2_q1 = m2.q1||0;
+            const m2_q2 = m2.q2||0;
+            const m2_q3 = m2.q3||0;
+            const m2_quiz = m2.unitTest||0;
             const m2_asgn = m2.assignment||0;
 
-            // Student-wise CO calculations
-            const co1 = ((m1_q1 + m1_quiz + m1_asgn) / 20) * 3;
-            const co2 = ((m1_q2 + m1_quiz + m1_asgn) / 20) * 3;
-            const co3 = ((m1_q3 + m2_q1 + m1_quiz + m2_quiz + m1_asgn + m2_asgn) / 40) * 3;
-            const co4 = ((m2_q2 + m2_quiz + m2_asgn) / 20) * 3;
-            const co5 = ((m2_q3 + m2_quiz + m2_asgn) / 20) * 3;
+            let co1=0, co2=0, co3=0, co4=0, co5=0;
 
+            if (regulation === 'MIC20') {
+                co1 = ((m1_q1 + m1_quiz + m1_asgn) / 20) * 3;
+                co2 = ((m1_q2 + m1_quiz + m1_asgn) / 20) * 3;
+                
+                const co3_mid1 = ((m1_q3 + m1_quiz + m1_asgn) / 20) * 3;
+                const co3_mid2 = ((m2_q1 + m2_quiz + m2_asgn) / 20) * 3;
+                co3 = (co3_mid1 + co3_mid2) / 2;
+
+                co4 = ((m2_q2 + m2_quiz + m2_asgn) / 20) * 3;
+                co5 = ((m2_q3 + m2_quiz + m2_asgn) / 20) * 3;
+            } else {
+                // MIC23 scale mapping
+                co1 = (( (m1.co1||0) + ((m1.unitTest||0)/2) + (m1.assignment||0) ) / 25) * 3;
+                co2 = (( (m1.co2||0) + ((m1.unitTest||0)/2) + (m1.assignment||0) ) / 25) * 3;
+                const co3_m1 = (( (m1.co3||0) + ((m1.unitTest||0)/2) + (m1.assignment||0) ) / 25) * 3;
+                const co3_m2 = (( (m2.co3||0) + ((m2.unitTest||0)/2) + (m2.assignment||0) ) / 25) * 3;
+                co3 = (co3_m1 + co3_m2) / 2;
+                co4 = (( (m2.co4||0) + ((m2.unitTest||0)/2) + (m2.assignment||0) ) / 25) * 3;
+                co5 = (( (m2.co5||0) + ((m2.unitTest||0)/2) + (m2.assignment||0) ) / 25) * 3;
+            }
+
+            // Cap at 3.0
+            co1 = Math.min(co1, 3.0); co2 = Math.min(co2, 3.0); co3 = Math.min(co3, 3.0); co4 = Math.min(co4, 3.0); co5 = Math.min(co5, 3.0);
+
+            // Assume threshold is 1.8 (60% of 3.0)
             if (co1 >= 1.8) co1Att++;
             if (co2 >= 1.8) co2Att++;
             if (co3 >= 1.8) co3Att++;
@@ -429,8 +450,14 @@ const FacultyModule = (() => {
             studentRows.push([
                 i+1, 
                 st.rollNo, 
-                m1_q1||'', m1_q2||'', m1_q3||'', m1_quiz||'', m1_asgn||'',
-                m2_q1||'', m2_q2||'', m2_q3||'', m2_quiz||'', m2_asgn||'',
+                m1_q1||(regulation==='MIC23'?m1.co1:'')||'', 
+                m1_q2||(regulation==='MIC23'?m1.co2:'')||'', 
+                m1_q3||(regulation==='MIC23'?m1.co3:'')||'', 
+                m1_quiz||'', m1_asgn||'',
+                m2_q1||(regulation==='MIC23'?m2.co3:'')||'', 
+                m2_q2||(regulation==='MIC23'?m2.co4:'')||'', 
+                m2_q3||(regulation==='MIC23'?m2.co5:'')||'', 
+                m2_quiz||'', m2_asgn||'',
                 co1.toFixed(2), co2.toFixed(2), co3.toFixed(2), co4.toFixed(2), co5.toFixed(2)
             ]);
         });
@@ -439,46 +466,40 @@ const FacultyModule = (() => {
         const s3 = (att) => (Math.round((att/app)*3*100)/100).toFixed(2);
         const pc = (att) => (Math.round((att/app)*100*100)/100).toFixed(2);
 
-        // Build rows for Excel
         const rows = [];
-        
-        // Top Header
-        rows.push(['DEPARTMENT OF MECH', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '']);
-        rows.push(['', '', '', '', '', '', '', '', '', 'COs', 'Course Outcomes', 'Attained', 'Appeared', '3-SCALE', 'CIE(%)']);
-        rows.push(['Subject Code', sub.code, '', '', '', '', '', '', '', 'CO 1', 'Evaluate performance...', co1Att, app, s3(co1Att), pc(co1Att)]);
-        rows.push(['Subject Name', sub.name, '', '', '', '', '', '', '', 'CO 2', 'Describes the working...', co2Att, app, s3(co2Att), pc(co2Att)]);
-        rows.push(['Year & Sem', 'III YEAR- V SEM', '', '', '', '', '', '', '', 'CO 3', 'analyze and evaluate...', co3Att, app, s3(co3Att), pc(co3Att)]);
-        rows.push(['Academic Year', '2023-24', '', '', '', '', '', '', '', 'CO 4', 'analyze and evaluate...', co4Att, app, s3(co4Att), pc(co4Att)]);
-        rows.push(['Faculty Name', App.getCurrentUser().name, '', '', '', '', '', '', '', 'CO 5', 'Aanalyze and evaluate...', co5Att, app, s3(co5Att), pc(co5Att)]);
+        // Top Headers mapped EXACTLY to Image 2 structure
+        rows.push(['DEPARTMENT OF MECH', '', '', '', '', '', '', '', '', 'CO 1', 'Evaluate performance of thermal power plant...', co1Att, app, s3(co1Att), pc(co1Att)]);
+        rows.push(['Subject Code', sub.code, '', '', '', '', '', '', '', 'CO 2', 'Describes the working and analyze the perform...', co2Att, app, s3(co2Att), pc(co2Att)]);
+        rows.push(['Subject Name', sub.name, '', '', '', '', '', '', '', 'CO 3', 'analyze and evaluate the performance of steam...', co3Att, app, s3(co3Att), pc(co3Att)]);
+        rows.push(['Year & Sem', 'III YEAR- V SEM', '', '', '', '', '', '', '', 'CO 4', 'analyze and evaluate the performance of steam...', co4Att, app, s3(co4Att), pc(co4Att)]);
+        rows.push(['Academic Year', '2023-24', '', '', '', '', '', '', '', 'CO 5', 'Aanalyze and evaluate the performance of Gas...', co5Att, app, s3(co5Att), pc(co5Att)]);
+        rows.push(['Faculty Name', App.getCurrentUser().name, '', '', '', '', '', '', '', '', '', '', '', '', '']);
         rows.push([]);
         rows.push([]);
         
-        // Headers
+        // Mid Headers
         rows.push(['Sl.No.', 'Roll Numbers', 'First Mid', '', '', '', '', 'Second Mid', '', '', '', '', 'Studentwise CO Attainments', '', '', '', '']);
         rows.push(['', '', 'Q1', 'Q2', 'Q3', 'Quiz 1', 'Assignment 1', 'Q1', 'Q2', 'Q3', 'Quiz 2', 'Assignment 2', 'CO 1', 'CO 2', 'CO 3', 'CO 4', 'CO 5']);
         rows.push(['', '', '5', '5', '5', '10', '5', '5', '5', '5', '10', '5', '', '', '', '', '']);
         rows.push(['', '', 'CO 1', 'CO 2', 'CO 3', 'CO 1,2,3', 'CO 1,2,3', 'CO 3', 'CO 4', 'CO 5', 'CO 3,4,5', 'CO 3,4,5', '', '', '', '', '']);
         
-        // Append all computed student rows
         studentRows.forEach(r => rows.push(r));
 
-        // Write to XLSX
         const ws = XLSX.utils.aoa_to_sheet(rows);
         
-        // Apply styling/merges
         ws['!merges'] = [
-            { s: {r: 0, c: 0}, e: {r: 0, c: 16} }, // DEPARTMENT OF MECH
-            { s: {r: 9, c: 2}, e: {r: 9, c: 6} }, // First Mid
-            { s: {r: 9, c: 7}, e: {r: 9, c: 11} }, // Second Mid
-            { s: {r: 9, c: 12}, e: {r: 9, c: 16} } // Studentwise CO Attainments
+            { s: {r: 0, c: 0}, e: {r: 0, c: 4} }, 
+            { s: {r: 8, c: 2}, e: {r: 8, c: 6} }, 
+            { s: {r: 8, c: 7}, e: {r: 8, c: 11} }, 
+            { s: {r: 8, c: 12}, e: {r: 8, c: 16} } 
         ];
         
         ws['!cols'] = [
-            {wch: 6}, // Sl No
-            {wch: 15}, // Roll
-            {wch: 6}, {wch: 6}, {wch: 6}, {wch: 10}, {wch: 14}, // Mid 1
-            {wch: 6}, {wch: 6}, {wch: 6}, {wch: 10}, {wch: 14}, // Mid 2
-            {wch: 6}, {wch: 6}, {wch: 6}, {wch: 6}, {wch: 6} // COs
+            {wch: 6}, 
+            {wch: 15}, 
+            {wch: 6}, {wch: 6}, {wch: 6}, {wch: 10}, {wch: 14}, 
+            {wch: 6}, {wch: 6}, {wch: 6}, {wch: 10}, {wch: 14}, 
+            {wch: 7}, {wch: 7}, {wch: 7}, {wch: 7}, {wch: 7} 
         ];
 
         const wb = XLSX.utils.book_new();
