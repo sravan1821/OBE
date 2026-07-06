@@ -66,7 +66,7 @@ input, select { font-family: inherit; }
 .college-name { font-size: 3.5rem; letter-spacing: -1px; margin-bottom: 0.5rem; }
 .college-name span { color: var(--danger); }
 .hero-subtitle { font-size: 1.1rem; color: #94A3B8; max-width: 500px; margin: 0 auto 2rem; }
-.login-footer { margin-top: 5rem; font-size: 0.85rem; color: rgba(255, 255, 255, 0.5); }
+.login-footer { margin-top: 4rem; font-size: 0.9rem; color: #64748b; }
 
 /* Login Modal (Always visible in center now instead of a popup) */
 .modal { display: none; }
@@ -106,6 +106,23 @@ input, select { font-family: inherit; }
 
 .btn-glow { padding: 0.8rem 2rem; background: var(--danger); color: white; border-radius: 50px; font-weight: 600; font-size: 1.1rem; box-shadow: 0 4px 15px rgba(207, 44, 49, 0.4); transition: transform 0.2s; }
 .btn-glow:hover { transform: translateY(-2px); }
+
+.btn-pro {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 0.6rem 1.2rem;
+    font-weight: 600; font-size: 0.95rem;
+    border-radius: 8px;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+.btn-pro:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+.btn-pro:active { transform: translateY(1px); box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+
+.btn-pro-primary { background: linear-gradient(135deg, var(--accent), #1a82c4); color: white; }
+.btn-pro-success { background: linear-gradient(135deg, var(--success), #0a995e); color: white; }
+.btn-pro-warning { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; text-shadow: 0 1px 1px rgba(0,0,0,0.1); }
 
 /* ==================== DASHBOARD LAYOUT ==================== */
 #dashboard-page { display: flex; height: 100vh; overflow: hidden; }

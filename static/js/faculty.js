@@ -98,19 +98,18 @@ const FacultyModule = (() => {
     /* =================== SYLLABUS TRACKING =================== */
     function renderSyllabus(c) {
         const user = App.getCurrentUser();
-        const role = App.getCurrentRole();
-        const subjects = (role === 'faculty') ? DataStore.getSubjectsByFaculty(user.id) : DataStore.getSubjects();
+        const subjects = DataStore.getSubjectsByFaculty(user.id);
         
         c.innerHTML = `
         <div class="fade-in">
             <div class="page-header" style="margin-bottom: 2rem;">
                 <h1>Syllabus Tracking</h1>
-                <p>${role === 'coordinator' ? 'View syllabus completion status for any subject.' : 'Update syllabus completion status for subjects.'}</p>
+                <p>Track your syllabus completion status for assigned subjects.</p>
             </div>
             
-            <div class="form-group mb-4" style="max-width:400px;">
+            <div class="form-group mb-4" style="max-width:300px;">
                 <label class="form-label">Select Subject</label>
-                <select class="form-select" id="syl-select">
+                <select class="form-select" id="fac-syl-select">
                     <option value="">— Choose a subject —</option>
                     ${subjects.map(s => `<option value="${s.id}">${s.code} — ${s.name}</option>`).join('')}
                 </select>
@@ -119,45 +118,32 @@ const FacultyModule = (() => {
             <div id="syllabus-content"></div>
         </div>`;
         
-        document.getElementById('syl-select').addEventListener('change', (e) => {
+        document.getElementById('fac-syl-select').addEventListener('change', (e) => {
             const sId = e.target.value;
             const container = document.getElementById('syllabus-content');
             if(!sId) { container.innerHTML = ''; return; }
             
             const units = DataStore.getSyllabusUnitsBySubject(sId);
-            const isCoordinator = (role === 'coordinator');
-
             container.innerHTML = `
                 <div class="card">
                     <div class="card-header"><h2>Units</h2></div>
                     <div class="card-body">
                         ${units.map(u => `
-                            <div style="display:flex; align-items:center; justify-content:space-between; padding:15px; border-bottom:1px solid var(--border-color);">
-                                <div style="display:flex; align-items:center;">
-                                    <input type="checkbox" class="syl-unit-checkbox" data-id="${u.id}" id="unit-${u.id}" ${u.isCompleted ? 'checked' : ''} style="width:20px; height:20px; margin-right:15px; cursor:pointer;" ${isCoordinator ? 'disabled' : ''}>
-                                    <label for="unit-${u.id}" style="font-size:1.1rem; font-weight:500; cursor:pointer;">${u.title}</label>
-                                </div>
-                                ${!isCoordinator ? `<button class="btn btn-success btn-xs btn-save-unit" data-id="${u.id}" data-title="${u.title}">💾 Save</button>` : ''}
+                            <div style="display:flex; align-items:center; padding:15px; border-bottom:1px solid var(--border-color);">
+                                <input type="checkbox" id="unit-${u.id}" ${u.isCompleted ? 'checked' : ''} style="width:20px; height:20px; margin-right:15px; cursor:pointer;">
+                                <label for="unit-${u.id}" style="font-size:1.1rem; font-weight:500; cursor:pointer;">${u.title}</label>
                             </div>
                         `).join('')}
                     </div>
                 </div>
             `;
             
-            if (!isCoordinator) {
-                container.querySelectorAll('.btn-save-unit').forEach(btn => {
-                    btn.addEventListener('click', (ev) => {
-                        const unitId = btn.dataset.id;
-                        const cb = document.getElementById(`unit-${unitId}`);
-                        DataStore.updateSyllabusUnit(unitId, cb.checked);
-                        App.showToast('Unit syllabus updated successfully', 'success');
-                        
-                        // Notify coordinator
-                        const subject = DataStore.getSubjectById(sId);
-                        DataStore.addNotification('coordinator', `Syllabus updated: ${subject ? subject.name : 'Unknown Subject'} - ${btn.dataset.title}`, true);
-                    });
+            units.forEach(u => {
+                document.getElementById(`unit-${u.id}`).addEventListener('change', (ev) => {
+                    DataStore.updateSyllabusUnit(u.id, ev.target.checked);
+                    App.showToast('Syllabus updated successfully');
                 });
-            }
+            });
         });
     }
 
@@ -223,6 +209,13 @@ const FacultyModule = (() => {
                     </div>
 
                     <div id="upload-area" style="display:none;">
+                        <div class="form-group mb-4" style="max-width: 300px; margin: 0 auto 1.5rem auto;">
+                            <label class="form-label">Select Regulation</label>
+                            <select class="form-select" id="fac-reg-select">
+                                <option value="MIC23">MIC 23</option>
+                                <option value="MIC20">MIC 20</option>
+                            </select>
+                        </div>
                         <div class="upload-zone" id="file-drop-zone">
                             <div class="upload-icon">📄</div>
                             <div class="upload-title">Click or drag Excel file here</div>
@@ -232,9 +225,9 @@ const FacultyModule = (() => {
                         <div id="upload-status" style="margin-top: 1rem; text-align: center; font-weight: 600;"></div>
                         
                         <div style="margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
-                            <button id="btn-process-save" class="btn-primary" style="display:none;">Process & Save to DataStore</button>
-                            <button id="btn-download-co" class="btn-primary" style="display:none; background: var(--success);">Download CO Attainment</button>
-                            <button id="btn-notify-hod" class="btn-warning" style="display:none;">🔔 Send Notification</button>
+                            <button id="btn-process-save" class="btn-pro btn-pro-primary" style="display:none;">💾 Process & Save to DataStore</button>
+                            <button id="btn-download-co" class="btn-pro btn-pro-success" style="display:none;">📥 Download CO Attainment</button>
+                            <button id="btn-notify-hod" class="btn-pro btn-pro-warning" style="display:none;">🔔 Send Urgent Notification</button>
                         </div>
                     </div>
                 </div>
@@ -288,8 +281,9 @@ const FacultyModule = (() => {
                     // Read raw json, preserving empty rows/columns
                     const json = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: null});
                     
-                    parsedData = parseMarksSheet(json);
-                    status.textContent = `Successfully parsed ${Object.keys(parsedData).length} student records!`;
+                    const regulation = document.getElementById('fac-reg-select').value;
+                    parsedData = parseMarksSheet(json, regulation);
+                    status.textContent = `Successfully parsed ${Object.keys(parsedData).length} student records for ${regulation}!`;
                     status.style.color = 'var(--success)';
                     btnProcess.style.display = 'block';
                 } catch (err) {
@@ -331,22 +325,13 @@ const FacultyModule = (() => {
         });
     }
 
-    function parseMarksSheet(rows) {
-        // Based on Image 1 format mapping:
-        // Row index 12 (0-indexed) is the first student row.
-        // Col mapping:
-        // 1: RollNo
-        // MID 1: 3-8(Q1-Q6), 10(UT), 11(Asgn)
-        // MID 2: 13-18(Q1-Q6), 20(UT), 21(Asgn)
+    function parseMarksSheet(rows, regulation) {
         const bulk = {};
         for (let i = 12; i < rows.length; i++) {
             const row = rows[i];
-            if (!row || !row[1]) continue; // Skip if no roll no
+            if (!row || !row[1]) continue; 
             
             const rollNo = row[1].toString().trim();
-            // In a real system, we look up the student ID by roll no.
-            // For this prototype, our dummy data student IDs match "stuX" but we don't have roll->id mapping easily.
-            // Wait! The DataStore actually has roll numbers. Let's find the student.
             const allStudents = DataStore.getStudents();
             const st = allStudents.find(s => s.rollNo === rollNo);
             const stuId = st ? st.id : null;
@@ -355,21 +340,53 @@ const FacultyModule = (() => {
             const val = (idx) => {
                 let v = row[idx];
                 if (v === 'AB' || v === 'ab' || v === undefined || v === null || v === '') return null;
-                return parseFloat(v);
+                const parsed = parseFloat(v);
+                if (isNaN(parsed)) throw new Error(`Invalid value "${v}" at row ${i+1}, column ${idx+1}. Must be a number or 'AB'.`);
+                return parsed;
             };
 
-            bulk[stuId] = {
-                mid1: {
+            let m1 = {}, m2 = {};
+            let finalInternal = 0;
+
+            if (regulation === 'MIC23') {
+                m1 = {
+                    co1: val(3), co2: val(4), co3: val(5),
+                    unitTest: val(10), assignment: val(11)
+                };
+                m1.internal = calculateMIC23Internal(m1);
+                
+                m2 = {
+                    co3: val(13), co4: val(14), co5: val(15),
+                    unitTest: val(20), assignment: val(21)
+                };
+                m2.internal = calculateMIC23Internal(m2);
+
+                const maxMid = Math.max(m1.internal, m2.internal);
+                const minMid = Math.min(m1.internal, m2.internal);
+                finalInternal = (0.8 * maxMid) + (0.2 * minMid);
+            } else {
+                // MIC20
+                m1 = {
                     q1: val(3), q2: val(4), q3: val(5), q4: val(6), q5: val(7), q6: val(8),
                     unitTest: val(10), assignment: val(11)
-                },
-                mid2: {
+                };
+                m2 = {
                     q1: val(13), q2: val(14), q3: val(15), q4: val(16), q5: val(17), q6: val(18),
                     unitTest: val(20), assignment: val(21)
-                }
-            };
+                };
+            }
+
+            bulk[stuId] = { mid1: m1, mid2: m2, finalInternal };
         }
         return bulk;
+    }
+
+    function calculateMIC23Internal(m) {
+        let chapterSum = 0;
+        if ('co1' in m) chapterSum = (m.co1 || 0) + (m.co2 || 0) + (m.co3 || 0);
+        else chapterSum = (m.co3 || 0) + (m.co4 || 0) + (m.co5 || 0);
+        
+        return (chapterSum / 2) + ((m.unitTest || 0) / 2) + (m.assignment || 0);
     }
 
     function downloadCOExcel(subjectId, marksData) {
@@ -469,5 +486,5 @@ const FacultyModule = (() => {
         XLSX.writeFile(wb, `${sub.code}_CO_Attainments.xlsx`);
     }
 
-    return { renderSection, renderMarksEntry, renderSyllabus };
+    return { renderSection, renderMarksEntry };
 })();
