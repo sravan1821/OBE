@@ -350,16 +350,16 @@ const FacultyModule = (() => {
             let finalInternal = 0;
 
             if (regulation === 'MIC23') {
-                // MIC23 format 
+                // MIC23 format (MAX pairs)
                 m1 = {
-                    co1: val(2), co2: val(3), co3: val(4),
-                    unitTest: val(9), assignment: val(10)
+                    q1: val(3), q2: val(4), q3: val(5), q4: val(6), q5: val(7), q6: val(8),
+                    unitTest: val(10), assignment: val(11)
                 };
                 m1.internal = calculateMIC23Internal(m1);
                 
                 m2 = {
-                    co3: val(14), co4: val(15), co5: val(16),
-                    unitTest: val(21), assignment: val(22)
+                    q1: val(13), q2: val(14), q3: val(15), q4: val(16), q5: val(17), q6: val(18),
+                    unitTest: val(20), assignment: val(21)
                 };
                 m2.internal = calculateMIC23Internal(m2);
 
@@ -384,11 +384,12 @@ const FacultyModule = (() => {
     }
 
     function calculateMIC23Internal(m) {
-        let chapterSum = 0;
-        if ('co1' in m) chapterSum = (m.co1 || 0) + (m.co2 || 0) + (m.co3 || 0);
-        else chapterSum = (m.co3 || 0) + (m.co4 || 0) + (m.co5 || 0);
+        const q1q2 = Math.max(m.q1||0, m.q2||0);
+        const q3q4 = Math.max(m.q3||0, m.q4||0);
+        const q5q6 = Math.max(m.q5||0, m.q6||0);
+        const chapterSum = q1q2 + q3q4 + q5q6;
         
-        return (chapterSum / 2) + ((m.unitTest || 0) / 2) + (m.assignment || 0);
+        return Math.ceil(chapterSum / 2) + Math.ceil((m.unitTest || 0) / 2) + (m.assignment || 0);
     }
 
     function downloadCOExcel(subjectId, marksData, regulation) {
@@ -402,40 +403,47 @@ const FacultyModule = (() => {
             const m = marksData[st.id] || { mid1:{}, mid2:{} };
             const m1 = m.mid1, m2 = m.mid2;
             
-            const m1_q1 = m1.q1||0;
-            const m1_q2 = m1.q2||0;
-            const m1_q3 = m1.q3||0;
-            const m1_quiz = m1.unitTest||0;
-            const m1_asgn = m1.assignment||0;
+            let m1_co1 = 0, m1_co2 = 0, m1_co3 = 0, m1_quiz = 0, m1_asgn = 0;
+            let m2_co3 = 0, m2_co4 = 0, m2_co5 = 0, m2_quiz = 0, m2_asgn = 0;
 
-            const m2_q1 = m2.q1||0;
-            const m2_q2 = m2.q2||0;
-            const m2_q3 = m2.q3||0;
-            const m2_quiz = m2.unitTest||0;
-            const m2_asgn = m2.assignment||0;
+            if (regulation === 'MIC23') {
+                m1_co1 = Math.ceil(Math.max(m1.q1||0, m1.q2||0) / 2);
+                m1_co2 = Math.ceil(Math.max(m1.q3||0, m1.q4||0) / 2);
+                m1_co3 = Math.ceil(Math.max(m1.q5||0, m1.q6||0) / 2);
+                m1_quiz = Math.ceil((m1.unitTest||0) / 2);
+                m1_asgn = m1.assignment||0;
+
+                m2_co3 = Math.ceil(Math.max(m2.q1||0, m2.q2||0) / 2);
+                m2_co4 = Math.ceil(Math.max(m2.q3||0, m2.q4||0) / 2);
+                m2_co5 = Math.ceil(Math.max(m2.q5||0, m2.q6||0) / 2);
+                m2_quiz = Math.ceil((m2.unitTest||0) / 2);
+                m2_asgn = m2.assignment||0;
+            } else {
+                // MIC20 format
+                m1_co1 = m1.q1||0;
+                m1_co2 = m1.q2||0;
+                m1_co3 = m1.q3||0;
+                m1_quiz = m1.unitTest||0;
+                m1_asgn = m1.assignment||0;
+
+                m2_co3 = m2.q1||0;
+                m2_co4 = m2.q2||0;
+                m2_co5 = m2.q3||0;
+                m2_quiz = m2.unitTest||0;
+                m2_asgn = m2.assignment||0;
+            }
 
             let co1=0, co2=0, co3=0, co4=0, co5=0;
 
-            if (regulation === 'MIC20') {
-                co1 = ((m1_q1 + m1_quiz + m1_asgn) / 20) * 3;
-                co2 = ((m1_q2 + m1_quiz + m1_asgn) / 20) * 3;
-                
-                const co3_mid1 = ((m1_q3 + m1_quiz + m1_asgn) / 20) * 3;
-                const co3_mid2 = ((m2_q1 + m2_quiz + m2_asgn) / 20) * 3;
-                co3 = (co3_mid1 + co3_mid2) / 2;
+            co1 = ((m1_co1 + m1_quiz + m1_asgn) / 20) * 3;
+            co2 = ((m1_co2 + m1_quiz + m1_asgn) / 20) * 3;
+            
+            const co3_mid1 = ((m1_co3 + m1_quiz + m1_asgn) / 20) * 3;
+            const co3_mid2 = ((m2_co3 + m2_quiz + m2_asgn) / 20) * 3;
+            co3 = (co3_mid1 + co3_mid2) / 2;
 
-                co4 = ((m2_q2 + m2_quiz + m2_asgn) / 20) * 3;
-                co5 = ((m2_q3 + m2_quiz + m2_asgn) / 20) * 3;
-            } else {
-                // MIC23 scale mapping
-                co1 = (( (m1.co1||0) + ((m1.unitTest||0)/2) + (m1.assignment||0) ) / 25) * 3;
-                co2 = (( (m1.co2||0) + ((m1.unitTest||0)/2) + (m1.assignment||0) ) / 25) * 3;
-                const co3_m1 = (( (m1.co3||0) + ((m1.unitTest||0)/2) + (m1.assignment||0) ) / 25) * 3;
-                const co3_m2 = (( (m2.co3||0) + ((m2.unitTest||0)/2) + (m2.assignment||0) ) / 25) * 3;
-                co3 = (co3_m1 + co3_m2) / 2;
-                co4 = (( (m2.co4||0) + ((m2.unitTest||0)/2) + (m2.assignment||0) ) / 25) * 3;
-                co5 = (( (m2.co5||0) + ((m2.unitTest||0)/2) + (m2.assignment||0) ) / 25) * 3;
-            }
+            co4 = ((m2_co4 + m2_quiz + m2_asgn) / 20) * 3;
+            co5 = ((m2_co5 + m2_quiz + m2_asgn) / 20) * 3;
 
             // Cap at 3.0
             co1 = Math.min(co1, 3.0); co2 = Math.min(co2, 3.0); co3 = Math.min(co3, 3.0); co4 = Math.min(co4, 3.0); co5 = Math.min(co5, 3.0);
@@ -450,14 +458,8 @@ const FacultyModule = (() => {
             studentRows.push([
                 i+1, 
                 st.rollNo, 
-                m1_q1||(regulation==='MIC23'?m1.co1:'')||'', 
-                m1_q2||(regulation==='MIC23'?m1.co2:'')||'', 
-                m1_q3||(regulation==='MIC23'?m1.co3:'')||'', 
-                m1_quiz||'', m1_asgn||'',
-                m2_q1||(regulation==='MIC23'?m2.co3:'')||'', 
-                m2_q2||(regulation==='MIC23'?m2.co4:'')||'', 
-                m2_q3||(regulation==='MIC23'?m2.co5:'')||'', 
-                m2_quiz||'', m2_asgn||'',
+                m1_co1||'', m1_co2||'', m1_co3||'', m1_quiz||'', m1_asgn||'',
+                m2_co3||'', m2_co4||'', m2_co5||'', m2_quiz||'', m2_asgn||'',
                 co1.toFixed(2), co2.toFixed(2), co3.toFixed(2), co4.toFixed(2), co5.toFixed(2)
             ]);
         });
