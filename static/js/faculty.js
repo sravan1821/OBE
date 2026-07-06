@@ -346,10 +346,7 @@ const FacultyModule = (() => {
             const rollNo = row[1].toString().trim();
             if (!/[A-Za-z]/.test(rollNo)) continue; // skip non-roll rows
 
-            const allStudents = DataStore.getStudents();
-            const st = allStudents.find(s => s.rollNo === rollNo);
-            if (!st) continue;
-
+            // NO DataStore lookup — use roll number directly as key
             const val = (idx) => {
                 let v = row[idx];
                 if (v === 'AB' || v === 'ab' || v === undefined || v === null || v === '') return 0;
@@ -364,29 +361,23 @@ const FacultyModule = (() => {
             if (regulation === 'MIC23') {
                 /* ===== MIC23 FORMAT =====
                    Each question has TWO evaluations (10 marks each).
-                   Layout per Mid: Q1e1, Q1e2, Q2e1, Q2e2, Q3e1, Q3e2, [Total], Quiz, Assignment
                    Mid 1 columns: 3,4,5,6,7,8 (6 Q values), skip 9 (total), 10 (Quiz), 11 (Asgn)
                    Mid 2 columns: 13,14,15,16,17,18 (6 Q values), skip 19, 20 (Quiz), 21 (Asgn)
                 */
                 m1 = {
-                    q1e1: val(3), q1e2: val(4),   // Q1: two evaluations (10 marks each)
-                    q2e1: val(5), q2e2: val(6),   // Q2: two evaluations
-                    q3e1: val(7), q3e2: val(8),   // Q3: two evaluations
-                    unitTest: val(10),             // Quiz / Unit Test
-                    assignment: val(11)            // Assignment
+                    q1e1: val(3), q1e2: val(4),
+                    q2e1: val(5), q2e2: val(6),
+                    q3e1: val(7), q3e2: val(8),
+                    unitTest: val(10), assignment: val(11)
                 };
                 m2 = {
                     q1e1: val(13), q1e2: val(14),
                     q2e1: val(15), q2e2: val(16),
                     q3e1: val(17), q3e2: val(18),
-                    unitTest: val(20),
-                    assignment: val(21)
+                    unitTest: val(20), assignment: val(21)
                 };
-
-                // Calculate Mid Totals for 80/20 Final Internal
                 m1.midTotal = calcMidTotal_MIC23(m1);
                 m2.midTotal = calcMidTotal_MIC23(m2);
-
                 const maxMid = Math.max(m1.midTotal, m2.midTotal);
                 const minMid = Math.min(m1.midTotal, m2.midTotal);
                 finalInternal = (0.8 * maxMid) + (0.2 * minMid);
@@ -394,7 +385,6 @@ const FacultyModule = (() => {
             } else {
                 /* ===== MIC20 FORMAT =====
                    Each question has a SINGLE value (5 marks each).
-                   Layout per Mid: Q1, Q2, Q3, Quiz(10), Assignment(5)
                    Mid 1 columns: 2(Q1), 3(Q2), 4(Q3), 5(Quiz), 6(Asgn)
                    Mid 2 columns: 7(Q1), 8(Q2), 9(Q3), 10(Quiz), 11(Asgn)
                 */
@@ -408,7 +398,7 @@ const FacultyModule = (() => {
                 };
             }
 
-            bulk[st.id] = { mid1: m1, mid2: m2, finalInternal, regulation };
+            bulk[rollNo] = { mid1: m1, mid2: m2, finalInternal, regulation };
         }
         return bulk;
     }
@@ -455,14 +445,16 @@ const FacultyModule = (() => {
     */
     function downloadCOExcel(subjectId, marksData, regulation) {
         const sub = DataStore.getSubjectById(subjectId);
-        const stus = DataStore.getStudentsByDeptAndSemester(sub.departmentId, sub.semester);
+
+        // Get all roll numbers directly from the parsed Excel data (not from DataStore)
+        const rollNumbers = Object.keys(marksData).sort();
 
         // Accumulators for Formula 2: COUNTIF >= 1.8
         let co1Att = 0, co2Att = 0, co3Att = 0, co4Att = 0, co5Att = 0;
         const studentRows = [];
 
-        stus.forEach((st, idx) => {
-            const rec = marksData[st.id];
+        rollNumbers.forEach((rollNo, idx) => {
+            const rec = marksData[rollNo];
             if (!rec) return;
             const m1 = rec.mid1, m2 = rec.mid2;
 
@@ -528,7 +520,7 @@ const FacultyModule = (() => {
             if (co5 >= 1.8) co5Att++;
 
             studentRows.push([
-                idx + 1, st.rollNo,
+                idx + 1, rollNo,
                 co1_q || '', co2_q || '', co3_q_m1 || '', quiz1 || '', asgn1 || '',
                 co3_q_m2 || '', co4_q || '', co5_q || '', quiz2 || '', asgn2 || '',
                 co1.toFixed(2), co2.toFixed(2), co3.toFixed(2), co4.toFixed(2), co5.toFixed(2)
@@ -536,7 +528,7 @@ const FacultyModule = (() => {
         });
 
         // ─── Summary Calculations ───
-        const totalStudents = stus.length || 1;
+        const totalStudents = rollNumbers.length || 1;
 
         // Formula 3: Attainment Value (0–3 scale) = ROUND((Attained / Total) * 3, 2)
         const attScale = (att) => parseFloat(((att / totalStudents) * 3).toFixed(2));
