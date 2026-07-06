@@ -445,11 +445,7 @@ const FacultyModule = (() => {
     */
     function downloadCOExcel(subjectId, marksData, regulation) {
         const sub = DataStore.getSubjectById(subjectId);
-
-        // Get all roll numbers directly from the parsed Excel data (not from DataStore)
         const rollNumbers = Object.keys(marksData).sort();
-
-        // Accumulators for Formula 2: COUNTIF >= 1.8
         let co1Att = 0, co2Att = 0, co3Att = 0, co4Att = 0, co5Att = 0;
         const studentRows = [];
 
@@ -457,211 +453,135 @@ const FacultyModule = (() => {
             const rec = marksData[rollNo];
             if (!rec) return;
             const m1 = rec.mid1, m2 = rec.mid2;
-
-            // ─── Step 1: Scale Q values to 5-mark equivalent ───
-            let co1_q = 0, co2_q = 0, co3_q_m1 = 0;
-            let co3_q_m2 = 0, co4_q = 0, co5_q = 0;
-            let quiz1 = 0, asgn1 = 0, quiz2 = 0, asgn2 = 0;
+            let co1_q=0, co2_q=0, co3_q_m1=0, co3_q_m2=0, co4_q=0, co5_q=0;
+            let quiz1=0, asgn1=0, quiz2=0, asgn2=0;
+            let rowData = [];
 
             if (regulation === 'MIC23') {
-                // Formula from Image 2: =ROUNDUP(MAX(eval1, eval2) / 2, 0)
-                // This scales each 10-mark question to a 5-mark equivalent
-                co1_q    = Math.ceil(Math.max(m1.q1e1 || 0, m1.q1e2 || 0) / 2);  // CO1 (Mid1 Q1)
-                co2_q    = Math.ceil(Math.max(m1.q2e1 || 0, m1.q2e2 || 0) / 2);  // CO2 (Mid1 Q2)
-                co3_q_m1 = Math.ceil(Math.max(m1.q3e1 || 0, m1.q3e2 || 0) / 2);  // CO3 from Mid1 Q3
-                co3_q_m2 = Math.ceil(Math.max(m2.q1e1 || 0, m2.q1e2 || 0) / 2);  // CO3 from Mid2 Q1
-                co4_q    = Math.ceil(Math.max(m2.q2e1 || 0, m2.q2e2 || 0) / 2);  // CO4 (Mid2 Q2)
-                co5_q    = Math.ceil(Math.max(m2.q3e1 || 0, m2.q3e2 || 0) / 2);  // CO5 (Mid2 Q3)
-
-                // Quiz: stays at raw value (out of 10) for CO calculation
-                quiz1 = m1.unitTest || 0;
-                asgn1 = m1.assignment || 0;
-                quiz2 = m2.unitTest || 0;
-                asgn2 = m2.assignment || 0;
-
+                const m1_max1 = Math.max(m1.q1e1||0, m1.q1e2||0);
+                const m1_max2 = Math.max(m1.q2e1||0, m1.q2e2||0);
+                const m1_max3 = Math.max(m1.q3e1||0, m1.q3e2||0);
+                const m1_totalDesc = m1_max1 + m1_max2 + m1_max3;
+                const m1_roundup = Math.ceil(m1_totalDesc / 2);
+                const m2_max1 = Math.max(m2.q1e1||0, m2.q1e2||0);
+                const m2_max2 = Math.max(m2.q2e1||0, m2.q2e2||0);
+                const m2_max3 = Math.max(m2.q3e1||0, m2.q3e2||0);
+                const m2_totalDesc = m2_max1 + m2_max2 + m2_max3;
+                const m2_roundup = Math.ceil(m2_totalDesc / 2);
+                co1_q = Math.ceil(m1_max1/2); co2_q = Math.ceil(m1_max2/2); co3_q_m1 = Math.ceil(m1_max3/2);
+                co3_q_m2 = Math.ceil(m2_max1/2); co4_q = Math.ceil(m2_max2/2); co5_q = Math.ceil(m2_max3/2);
+                quiz1 = m1.unitTest||0; asgn1 = m1.assignment||0;
+                quiz2 = m2.unitTest||0; asgn2 = m2.assignment||0;
+                rowData = [idx+1, rollNo,
+                    m1.q1e1||'', m1.q1e2||'', m1.q2e1||'', m1.q2e2||'', m1.q3e1||'', m1.q3e2||'',
+                    m1_totalDesc, m1_roundup, quiz1||'', asgn1||'',
+                    m2.q1e1||'', m2.q1e2||'', m2.q2e1||'', m2.q2e2||'', m2.q3e1||'', m2.q3e2||'',
+                    m2_totalDesc, m2_roundup, quiz2||'', asgn2||''];
             } else {
-                // MIC20: Q values are DIRECT (already out of 5)
-                co1_q    = m1.q1 || 0;   // CO1 (Mid1 Q1, out of 5)
-                co2_q    = m1.q2 || 0;   // CO2 (Mid1 Q2, out of 5)
-                co3_q_m1 = m1.q3 || 0;   // CO3 from Mid1 Q3 (out of 5)
-                co3_q_m2 = m2.q1 || 0;   // CO3 from Mid2 Q1 (out of 5)
-                co4_q    = m2.q2 || 0;   // CO4 (Mid2 Q2, out of 5)
-                co5_q    = m2.q3 || 0;   // CO5 (Mid2 Q3, out of 5)
-
-                quiz1 = m1.unitTest || 0;   // Quiz out of 10
-                asgn1 = m1.assignment || 0; // Assignment out of 5
-                quiz2 = m2.unitTest || 0;
-                asgn2 = m2.assignment || 0;
+                co1_q = m1.q1||0; co2_q = m1.q2||0; co3_q_m1 = m1.q3||0;
+                co3_q_m2 = m2.q1||0; co4_q = m2.q2||0; co5_q = m2.q3||0;
+                quiz1 = m1.unitTest||0; asgn1 = m1.assignment||0;
+                quiz2 = m2.unitTest||0; asgn2 = m2.assignment||0;
+                rowData = [idx+1, rollNo,
+                    co1_q||'', co2_q||'', co3_q_m1||'', quiz1||'', asgn1||'',
+                    co3_q_m2||'', co4_q||'', co5_q||'', quiz2||'', asgn2||''];
             }
 
-            // ─── Step 2: Student-wise CO Attainment ───
-            // Formula: CO = ((Q_value + Quiz + Assignment) / 20) * 3
-            // Max per CO component: Q(5) + Quiz(10) + Asgn(5) = 20
             let co1 = ((co1_q + quiz1 + asgn1) / 20) * 3;
             let co2 = ((co2_q + quiz1 + asgn1) / 20) * 3;
-
-            // CO3 spans both mids → average
-            const co3_from_m1 = ((co3_q_m1 + quiz1 + asgn1) / 20) * 3;
-            const co3_from_m2 = ((co3_q_m2 + quiz2 + asgn2) / 20) * 3;
-            let co3 = (co3_from_m1 + co3_from_m2) / 2;
-
+            const co3_a = ((co3_q_m1 + quiz1 + asgn1) / 20) * 3;
+            const co3_b = ((co3_q_m2 + quiz2 + asgn2) / 20) * 3;
+            let co3 = (co3_a + co3_b) / 2;
             let co4 = ((co4_q + quiz2 + asgn2) / 20) * 3;
             let co5 = ((co5_q + quiz2 + asgn2) / 20) * 3;
-
-            // Cap at 3.0
-            co1 = Math.min(co1, 3); co2 = Math.min(co2, 3);
-            co3 = Math.min(co3, 3); co4 = Math.min(co4, 3); co5 = Math.min(co5, 3);
-
-            // ─── Formula 2: Count students achieving ≥ 1.8 ───
-            if (co1 >= 1.8) co1Att++;
-            if (co2 >= 1.8) co2Att++;
-            if (co3 >= 1.8) co3Att++;
-            if (co4 >= 1.8) co4Att++;
-            if (co5 >= 1.8) co5Att++;
-
-            studentRows.push([
-                idx + 1, rollNo,
-                co1_q || '', co2_q || '', co3_q_m1 || '', quiz1 || '', asgn1 || '',
-                co3_q_m2 || '', co4_q || '', co5_q || '', quiz2 || '', asgn2 || '',
-                co1.toFixed(2), co2.toFixed(2), co3.toFixed(2), co4.toFixed(2), co5.toFixed(2)
-            ]);
+            co1=Math.min(co1,3); co2=Math.min(co2,3); co3=Math.min(co3,3); co4=Math.min(co4,3); co5=Math.min(co5,3);
+            if(co1>=1.8) co1Att++; if(co2>=1.8) co2Att++; if(co3>=1.8) co3Att++;
+            if(co4>=1.8) co4Att++; if(co5>=1.8) co5Att++;
+            rowData.push(co1.toFixed(2), co2.toFixed(2), co3.toFixed(2), co4.toFixed(2), co5.toFixed(2));
+            studentRows.push(rowData);
         });
 
-        // ─── Summary Calculations ───
-        const totalStudents = rollNumbers.length || 1;
-
-        // Formula 3: Attainment Value (0–3 scale) = ROUND((Attained / Total) * 3, 2)
-        const attScale = (att) => parseFloat(((att / totalStudents) * 3).toFixed(2));
-
-        // Formula 4: Pass Percentage (CIE%) = ROUND((Attained / Total) * 100, 2)
-        const passPct = (att) => parseFloat(((att / totalStudents) * 100).toFixed(2));
-
-        // ─── Build Excel Rows ───
+        const tot = rollNumbers.length || 1;
+        const a3 = (a) => parseFloat(((a/tot)*3).toFixed(2));
+        const pc = (a) => parseFloat(((a/tot)*100).toFixed(2));
         const exRows = [];
 
-        // ── Top Section: Department info + CO Summary Table ──
-        // Row 0
-        exRows.push([
-            'DEPARTMENT OF MECH', '', '', '', '', '', '', '', '',
-            '', '', 'Attained', 'Appeared', '3-SCALE', 'CIE (%)'
-        ]);
-        // Row 1: Subject Code + CO 1 summary
-        exRows.push([
-            'Subject Code', sub.code, '', '', '', '', '', '', '',
-            'CO 1', 'Evaluate performance of thermal power plant',
-            co1Att, totalStudents, attScale(co1Att), passPct(co1Att)
-        ]);
-        // Row 2: Subject Name + CO 2 summary
-        exRows.push([
-            'Subject Name', sub.name, '', '', '', '', '', '', '',
-            'CO 2', 'Describes the working and analyze the performance',
-            co2Att, totalStudents, attScale(co2Att), passPct(co2Att)
-        ]);
-        // Row 3: Year + CO 3 summary
-        exRows.push([
-            'Year & Sem', 'III YEAR- V SEM', '', '', '', '', '', '', '',
-            'CO 3', 'analyze and evaluate the performance of steam',
-            co3Att, totalStudents, attScale(co3Att), passPct(co3Att)
-        ]);
-        // Row 4: Academic Year + CO 4 summary
-        exRows.push([
-            'Academic Year', '2023-24', '', '', '', '', '', '', '',
-            'CO 4', 'analyze and evaluate the performance of steam',
-            co4Att, totalStudents, attScale(co4Att), passPct(co4Att)
-        ]);
-        // Row 5: Faculty + CO 5 summary
-        exRows.push([
-            'Faculty Name', App.getCurrentUser().name, '', '', '', '', '', '', '',
-            'CO 5', 'Aanalyze and evaluate the performance of Gas',
-            co5Att, totalStudents, attScale(co5Att), passPct(co5Att)
-        ]);
-        // Row 6: Total students counted
-        exRows.push([
-            '', '', '', '', '', '', '', '', '',
-            '', 'Total students counted =', totalStudents, '', '', ''
-        ]);
+        if (regulation === 'MIC23') {
+            /* ════════ MIC23 OUTPUT ════════ */
+            exRows.push(['DEPARTMENT OF MECH','','','','','','','','','','','','','','','','','','','','','','','Attained','Appeared','3-SCALE','CIE (%)']);
+            exRows.push(['Subject Code',sub.code,'','','','','','','','','','','','','','','','','','','','','CO 1',co1Att,tot,a3(co1Att),pc(co1Att)]);
+            exRows.push(['Subject Name',sub.name,'','','','','','','','','','','','','','','','','','','','','CO 2',co2Att,tot,a3(co2Att),pc(co2Att)]);
+            exRows.push(['Year & Sem','III YEAR- V SEM','','','','','','','','','','','','','','','','','','','','','CO 3',co3Att,tot,a3(co3Att),pc(co3Att)]);
+            exRows.push(['Academic Year','2023-24','','','','','','','','','','','','','','','','','','','','','CO 4',co4Att,tot,a3(co4Att),pc(co4Att)]);
+            exRows.push(['Faculty',App.getCurrentUser().name,'','','','','','','','','','','','','','','','','','','','','CO 5',co5Att,tot,a3(co5Att),pc(co5Att)]);
+            exRows.push([]); exRows.push([]);
+            exRows.push(['Sl.No.','Roll Numbers',
+                'First Mid','','','','','','','','','',
+                'Second Mid','','','','','','','','','',
+                'Studentwise CO Attainments','','','','']);
+            exRows.push(['','',
+                'Q1 E1','Q1 E2','Q2 E1','Q2 E2','Q3 E1','Q3 E2','Total Desc','ROUNDUP(/2)','Quiz','Assignment',
+                'Q1 E1','Q1 E2','Q2 E1','Q2 E2','Q3 E1','Q3 E2','Total Desc','ROUNDUP(/2)','Quiz','Assignment',
+                'CO 1','CO 2','CO 3','CO 4','CO 5']);
+            exRows.push(['','',
+                10,10,10,10,10,10,'=SUM(MAX)','=ROUNDUP(/2)',10,5,
+                10,10,10,10,10,10,'=SUM(MAX)','=ROUNDUP(/2)',10,5,
+                '','','','','']);
+            exRows.push(['','',
+                'CO1','CO1','CO2','CO2','CO3','CO3','','','','',
+                'CO3','CO3','CO4','CO4','CO5','CO5','','','','',
+                '','','','','']);
+            studentRows.forEach(r => exRows.push(r));
+            const ws = XLSX.utils.aoa_to_sheet(exRows);
+            ws['!merges'] = [
+                {s:{r:0,c:0},e:{r:0,c:6}},
+                {s:{r:8,c:2},e:{r:8,c:11}}, {s:{r:8,c:12},e:{r:8,c:21}}, {s:{r:8,c:22},e:{r:8,c:26}}];
+            ws['!cols'] = [{wch:6},{wch:15},
+                {wch:7},{wch:7},{wch:7},{wch:7},{wch:7},{wch:7},{wch:10},{wch:10},{wch:7},{wch:10},
+                {wch:7},{wch:7},{wch:7},{wch:7},{wch:7},{wch:7},{wch:10},{wch:10},{wch:7},{wch:10},
+                {wch:7},{wch:7},{wch:7},{wch:7},{wch:7}];
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'CO Attainments MIC23');
+            XLSX.writeFile(wb, `${sub.code}_CO_MIC23.xlsx`);
 
-        // Row 7: blank
-        exRows.push([]);
-
-        // ── Marks Table Section ──
-        // Row 8: Section headers
-        exRows.push([
-            'Sl.No.', 'Roll Numbers',
-            'First Mid', '', '', '', '',
-            'Second Mid', '', '', '', '',
-            'Studentwise CO Attainments', '', '', '', ''
-        ]);
-        // Row 9: Column sub-headers
-        exRows.push([
-            '', '',
-            'Q1', 'Q2', 'Q3', 'Quiz 1', 'Assignment 1',
-            'Q1', 'Q2', 'Q3', 'Quiz 2', 'Assignment 2',
-            'CO 1', 'CO 2', 'CO 3', 'CO 4', 'CO 5'
-        ]);
-        // Row 10: Max marks
-        exRows.push([
-            '', '',
-            '5', '5', '5', '10', '5',
-            '5', '5', '5', '10', '5',
-            '', '', '', '', ''
-        ]);
-        // Row 11: CO mapping
-        exRows.push([
-            '', '',
-            'CO 1', 'CO 2', 'CO 3', 'CO 1,2,3', 'CO 1,2,3',
-            'CO 3', 'CO 4', 'CO 5', 'CO 3,4,5', 'CO 3,4,5',
-            '', '', '', '', ''
-        ]);
-
-        // Row 12+: Student data
-        studentRows.forEach(r => exRows.push(r));
-
-        // ── Formula 7: Overall Direct Attainment (Internal 40% + External 60%) ──
-        // Since we only have Internal Assessment, we show it and leave External as placeholder
-        exRows.push([]);
-        exRows.push(['', '', '', '', '', '', '', '', '', '', '', '',
-            'Internal Attainment (IA)', '', '', '', '']);
-        exRows.push(['', '', '', '', '', '', '', '', '', '', '', '',
-            'CO 1', 'CO 2', 'CO 3', 'CO 4', 'CO 5']);
-        exRows.push(['', '', '', '', '', '', '', '', '', '', '', '',
-            attScale(co1Att), attScale(co2Att), attScale(co3Att), attScale(co4Att), attScale(co5Att)]);
-
-        // Formula 7 placeholder row
-        exRows.push(['', '', '', '', '', '', '', '', '', '', '', '',
-            'Formula 7: Direct Att = ROUND((IA*0.4 + EA*0.6)*3, 2)', '', '', '', '']);
-        // Formula 8 placeholder row
-        exRows.push(['', '', '', '', '', '', '', '', '', '', '', '',
-            'Formula 8: Overall CO = ROUND(Direct*0.7 + Indirect*0.3, 2)', '', '', '', '']);
-        // Formula 9 placeholder row
-        exRows.push(['', '', '', '', '', '', '', '', '', '', '', '',
-            'Formula 9: Att % = ROUND(OverallCO / 3 * 100, 1)', '', '', '', '']);
-
-        // ── Write to XLSX ──
-        const ws = XLSX.utils.aoa_to_sheet(exRows);
-
-        ws['!merges'] = [
-            { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },    // DEPARTMENT header
-            { s: { r: 8, c: 2 }, e: { r: 8, c: 6 } },    // First Mid
-            { s: { r: 8, c: 7 }, e: { r: 8, c: 11 } },   // Second Mid
-            { s: { r: 8, c: 12 }, e: { r: 8, c: 16 } }   // Studentwise CO
-        ];
-
-        ws['!cols'] = [
-            { wch: 6 },                                    // Sl.No
-            { wch: 15 },                                   // Roll Numbers
-            { wch: 6 }, { wch: 6 }, { wch: 6 },           // Q1,Q2,Q3 Mid1
-            { wch: 10 }, { wch: 14 },                     // Quiz1, Asgn1
-            { wch: 6 }, { wch: 6 }, { wch: 6 },           // Q1,Q2,Q3 Mid2
-            { wch: 10 }, { wch: 14 },                     // Quiz2, Asgn2
-            { wch: 7 }, { wch: 7 }, { wch: 7 },           // CO1,CO2,CO3
-            { wch: 7 }, { wch: 7 }                        // CO4,CO5
-        ];
-
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'CO Attainments');
-        XLSX.writeFile(wb, `${sub.code}_CO_Attainments.xlsx`);
+        } else {
+            /* ════════ MIC20 OUTPUT ════════ */
+            exRows.push(['DEPARTMENT OF MECH','','','','','','','','','','','Attained','Appeared','3-SCALE','CIE (%)']);
+            exRows.push(['Subject Code',sub.code,'','','','','','','','CO 1','',co1Att,tot,a3(co1Att),pc(co1Att)]);
+            exRows.push(['Subject Name',sub.name,'','','','','','','','CO 2','',co2Att,tot,a3(co2Att),pc(co2Att)]);
+            exRows.push(['Year & Sem','III YEAR- V SEM','','','','','','','','CO 3','',co3Att,tot,a3(co3Att),pc(co3Att)]);
+            exRows.push(['Academic Year','2023-24','','','','','','','','CO 4','',co4Att,tot,a3(co4Att),pc(co4Att)]);
+            exRows.push(['Faculty',App.getCurrentUser().name,'','','','','','','','CO 5','',co5Att,tot,a3(co5Att),pc(co5Att)]);
+            exRows.push(['','','','','','','','','','Total students =',tot]);
+            exRows.push([]);
+            exRows.push(['Sl.No.','Roll Numbers',
+                'First Mid','','','','',
+                'Second Mid','','','','',
+                'Studentwise CO Attainments','','','','']);
+            exRows.push(['','',
+                'Q1','Q2','Q3','Quiz 1','Assignment 1',
+                'Q1','Q2','Q3','Quiz 2','Assignment 2',
+                'CO 1','CO 2','CO 3','CO 4','CO 5']);
+            exRows.push(['','', 5,5,5,10,5, 5,5,5,10,5, '','','','','']);
+            exRows.push(['','',
+                'CO 1','CO 2','CO 3','CO 1,2,3','CO 1,2,3',
+                'CO 3','CO 4','CO 5','CO 3,4,5','CO 3,4,5',
+                '','','','','']);
+            studentRows.forEach(r => exRows.push(r));
+            const ws = XLSX.utils.aoa_to_sheet(exRows);
+            ws['!merges'] = [
+                {s:{r:0,c:0},e:{r:0,c:4}},
+                {s:{r:8,c:2},e:{r:8,c:6}}, {s:{r:8,c:7},e:{r:8,c:11}}, {s:{r:8,c:12},e:{r:8,c:16}}];
+            ws['!cols'] = [{wch:6},{wch:15},
+                {wch:6},{wch:6},{wch:6},{wch:10},{wch:14},
+                {wch:6},{wch:6},{wch:6},{wch:10},{wch:14},
+                {wch:7},{wch:7},{wch:7},{wch:7},{wch:7}];
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'CO Attainments MIC20');
+            XLSX.writeFile(wb, `${sub.code}_CO_MIC20.xlsx`);
+        }
     }
 
     return { renderSection, renderMarksEntry };
 })();
+
