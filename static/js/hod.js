@@ -85,19 +85,24 @@ const HODModule = (() => {
                 <!-- Marks overview -->
                 <div class="card">
                     <div class="card-header"><h3>Marks Overview</h3></div>
-                    <div class="card-body">
-                        <div class="mb-2">
-                            <div class="progress-label"><span>Marks Entered</span><span>${marksEntered}/${subjects.length}</span></div>
-                            <div class="progress-bar"><div class="progress-fill ${marksEntered/subjects.length < 0.5 ? 'low' : marksEntered/subjects.length < 0.8 ? 'medium' : 'high'}" style="width:${subjects.length?Math.round(marksEntered/subjects.length*100):0}%"></div></div>
+                    <div class="card-body" style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
+                        <div style="flex:1; min-width: 150px; max-width: 150px; margin: 0 auto;">
+                            <canvas id="hod-dashboard-chart"></canvas>
                         </div>
-                        <div class="mb-2">
-                            <div class="progress-label"><span>Verified</span><span>${verified}/${subjects.length}</span></div>
-                            <div class="progress-bar"><div class="progress-fill high" style="width:${subjects.length?Math.round(verified/subjects.length*100):0}%"></div></div>
-                        </div>
-                        <div style="margin-top:1.5rem">
-                            ${subjects.filter(s => !DataStore.areMarksEntered(s.id)).length > 0
-                                ? `<p class="text-sm" style="color:var(--danger)">⚠️ ${subjects.filter(s => !DataStore.areMarksEntered(s.id)).length} subject(s) still pending mark entry</p>`
-                                : '<p class="text-sm text-success">✅ All marks have been entered</p>'}
+                        <div style="flex:2; min-width: 200px;">
+                            <div class="mb-2">
+                                <div class="progress-label"><span>Marks Entered</span><span>${marksEntered}/${subjects.length}</span></div>
+                                <div class="progress-bar"><div class="progress-fill ${marksEntered/subjects.length < 0.5 ? 'low' : marksEntered/subjects.length < 0.8 ? 'medium' : 'high'}" style="width:${subjects.length?Math.round(marksEntered/subjects.length*100):0}%"></div></div>
+                            </div>
+                            <div class="mb-2">
+                                <div class="progress-label"><span>Verified</span><span>${verified}/${subjects.length}</span></div>
+                                <div class="progress-bar"><div class="progress-fill high" style="width:${subjects.length?Math.round(verified/subjects.length*100):0}%"></div></div>
+                            </div>
+                            <div style="margin-top:1rem">
+                                ${subjects.filter(s => !DataStore.areMarksEntered(s.id)).length > 0
+                                    ? `<p class="text-sm" style="color:var(--danger)">⚠️ ${subjects.filter(s => !DataStore.areMarksEntered(s.id)).length} subject(s) still pending mark entry</p>`
+                                    : '<p class="text-sm text-success">✅ All marks have been entered</p>'}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -125,6 +130,30 @@ const HODModule = (() => {
                 renderDashboard(c);
             }
         });
+
+        setTimeout(() => {
+            const ctx = document.getElementById('hod-dashboard-chart');
+            if (ctx) {
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Entered', 'Pending'],
+                        datasets: [{
+                            data: [marksEntered, subjects.length - marksEntered],
+                            backgroundColor: ['#00796B', '#cf2c31'],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        cutout: '70%'
+                    }
+                });
+            }
+        }, 100);
     }
 
     /* =================== MANAGE FACULTY =================== */

@@ -142,9 +142,18 @@ const App = (() => {
                 <button class="btn-logout" id="btn-logout"><span>🚪</span> Logout</button>
             </div>`;
 
-        // Render Topbar and Content Wrapper
-        const savedTheme = localStorage.getItem('obe_theme') || 'theme-deep-blue';
+        // Assign role-specific theme class automatically to look professional
+        let themeClass = 'theme-deep-blue'; // Default / Faculty
+        if (currentRole === 'hod') {
+            themeClass = 'theme-teal'; // Teal Modern for HOD
+        } else if (currentRole === 'coordinator') {
+            themeClass = 'theme-purple'; // Purple Elegant for Coordinator
+        } else if (currentRole === 'management') {
+            themeClass = 'theme-orange'; // Orange Warm for Manager/Management
+        }
+        const savedTheme = themeClass;
         document.body.className = savedTheme;
+        localStorage.setItem('obe_theme', savedTheme);
 
         main.innerHTML = `
             <div class="topbar">
