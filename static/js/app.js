@@ -10,6 +10,9 @@ const App = (() => {
         DataStore.init();
         bindLoginEvents();
 
+        const savedTheme = localStorage.getItem('obe_theme') || 'theme-deep-blue';
+        document.body.className = savedTheme;
+
         const session = JSON.parse(localStorage.getItem('obe_session') || 'null');
         if (session) {
             currentUser = session.user;
@@ -140,10 +143,21 @@ const App = (() => {
             </div>`;
 
         // Render Topbar and Content Wrapper
+        const savedTheme = localStorage.getItem('obe_theme') || 'theme-deep-blue';
+        document.body.className = savedTheme;
+
         main.innerHTML = `
             <div class="topbar">
                 <div class="topbar-title">Dashboard Overview</div>
                 <div class="topbar-right" style="display:flex; align-items:center;">
+                    <select class="form-select" id="theme-selector" style="width: auto; max-width: 180px; padding: 0.35rem 0.5rem; font-size: 0.85rem; border-radius: 6px; background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); margin-right: 1.5rem; font-weight: 600; cursor: pointer;">
+                        <option value="theme-deep-blue" ${savedTheme==='theme-deep-blue'?'selected':''} style="color: black;">Theme: Deep Blue</option>
+                        <option value="theme-green-academic" ${savedTheme==='theme-green-academic'?'selected':''} style="color: black;">Theme: Green Academic</option>
+                        <option value="theme-purple" ${savedTheme==='theme-purple'?'selected':''} style="color: black;">Theme: Purple Elegant</option>
+                        <option value="theme-orange" ${savedTheme==='theme-orange'?'selected':''} style="color: black;">Theme: Orange Warm</option>
+                        <option value="theme-teal" ${savedTheme==='theme-teal'?'selected':''} style="color: black;">Theme: Teal Modern</option>
+                        <option value="theme-dark-slate" ${savedTheme==='theme-dark-slate'?'selected':''} style="color: black;">Theme: Dark Slate</option>
+                    </select>
                     <div class="notifications-container" style="position:relative; margin-right:1.5rem; cursor:pointer;" onclick="App.toggleNotifications()">
                         <span style="font-size:1.4rem;">🔔</span>
                         <span id="notif-badge" class="badge" style="display:none; position:absolute; top:-5px; right:-10px; background:var(--danger); color:white; border-radius:50%; padding:2px 6px; font-size:0.7rem; font-weight:bold;">0</span>
@@ -161,6 +175,13 @@ const App = (() => {
             </div>
             <div id="page-content" class="page-content"></div>
         `;
+
+        // Theme switching listener
+        document.getElementById('theme-selector').addEventListener('change', (e) => {
+            const newTheme = e.target.value;
+            document.body.className = newTheme;
+            localStorage.setItem('obe_theme', newTheme);
+        });
 
         sidebar.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', e => {
