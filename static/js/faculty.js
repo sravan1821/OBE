@@ -645,7 +645,7 @@ const FacultyModule = (() => {
             exRows.push(['Faculty',App.getCurrentUser().name,'','','','','','','','','','','','','','','','','','','','','CO 5',co5Att,tot,a3(co5Att),pc(co5Att)]);
             exRows.push([]); exRows.push([]);
             exRows.push(['Sl.No.','Roll Numbers','First Mid','','','','','','','','','','Second Mid','','','','','','','','','','Studentwise CO Attainments','','','','']);
-            exRows.push(['','','Q1 E1','Q1 E2','Q2 E1','Q2 E2','Q3 E1','Q3 E2','Total Desc','ROUNDUP(/2)','Quiz','Assignment','Q1 E1','Q1 E2','Q2 E1','Q2 E2','Q3 E1','Q3 E2','Total Desc','ROUNDUP(/2)','Quiz','Assignment','CO 1','CO 2','CO 3','CO 4','CO 5']);
+            exRows.push(['','','Q1','Q2','Q3','Q4','Q5','Q6','Total Desc','ROUNDUP(/2)','Quiz','Assignment','Q1','Q2','Q3','Q4','Q5','Q6','Total Desc','ROUNDUP(/2)','Quiz','Assignment','CO 1','CO 2','CO 3','CO 4','CO 5']);
             exRows.push(['','',10,10,10,10,10,10,'=SUM(MAX)','=ROUNDUP(/2)',10,5,10,10,10,10,10,10,'=SUM(MAX)','=ROUNDUP(/2)',10,5,'','','','','']);
             exRows.push(['','','CO1','CO1','CO2','CO2','CO3','CO3','','','','','CO3','CO3','CO4','CO4','CO5','CO5','','','','','','','','','']);
             studentRows.forEach(r => exRows.push(r));
