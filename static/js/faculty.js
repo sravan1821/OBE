@@ -339,6 +339,21 @@ const FacultyModule = (() => {
         }
         if (startRow === 0) startRow = 10; // fallback
 
+        // Detect layout type based on header content (MID-I TOTAL or SCALE indicates the new detailed layout)
+        let isNewLayout = false;
+        for (let r = 0; r < Math.min(rows.length, 12); r++) {
+            if (rows[r]) {
+                for (let c = 0; c < rows[r].length; c++) {
+                    const valStr = String(rows[r][c] || '').toUpperCase();
+                    if (valStr.includes("MID-I TOTAL") || valStr.includes("SCALE")) {
+                        isNewLayout = true;
+                        break;
+                    }
+                }
+            }
+            if (isNewLayout) break;
+        }
+
         for (let i = startRow; i < rows.length; i++) {
             const row = rows[i];
             if (!row || !row[1]) continue;
@@ -365,7 +380,7 @@ const FacultyModule = (() => {
                    Mid 2 columns: 13,14,15,16,17,18 (6 Q values), skip 19, 20 (Quiz), 21 (Asgn)
                 */
                 let ut1 = 11, asg1 = 13, m2q_start = 15, ut2 = 23, asg2 = 25;
-                if (row.length <= 23) { 
+                if (!isNewLayout) { 
                     // Fallback to old format
                     ut1 = 10; asg1 = 11; m2q_start = 13; ut2 = 20; asg2 = 21;
                 }
