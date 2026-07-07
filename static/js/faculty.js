@@ -365,7 +365,7 @@ const FacultyModule = (() => {
                    Mid 2 columns: 13,14,15,16,17,18 (6 Q values), skip 19, 20 (Quiz), 21 (Asgn)
                 */
                 let ut1 = 11, asg1 = 13, m2q_start = 15, ut2 = 23, asg2 = 25;
-                if (row[13] === undefined && row[11] !== undefined) { 
+                if (row.length <= 23) { 
                     // Fallback to old format
                     ut1 = 10; asg1 = 11; m2q_start = 13; ut2 = 20; asg2 = 21;
                 }
