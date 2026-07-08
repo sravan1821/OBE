@@ -119,10 +119,10 @@ const MarksUtils = (() => {
                                 <th rowspan="2" style="text-align:center;color:var(--neon-green)">Final<br>/30</th>
                             </tr>
                             <tr>
-                                <th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>Q5</th><th>Q6</th>
+                                <th>Q1<br>(CO1)</th><th>Q2<br>(CO1)</th><th>Q3<br>(CO2)</th><th>Q4<br>(CO2)</th><th>Q5<br>(CO3)</th><th>Q6<br>(CO3)</th>
                                 <th style="color:var(--neon-cyan)">Desc</th><th>UT</th><th>Asgn</th>
                                 <th style="color:var(--neon-blue)">Total</th>
-                                <th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>Q5</th><th>Q6</th>
+                                <th>Q1<br>(CO3)</th><th>Q2<br>(CO3)</th><th>Q3<br>(CO4)</th><th>Q4<br>(CO4)</th><th>Q5<br>(CO5)</th><th>Q6<br>(CO5)</th>
                                 <th style="color:var(--neon-cyan)">Desc</th><th>UT</th><th>Asgn</th>
                                 <th style="color:var(--neon-purple)">Total</th>
                             </tr>
