@@ -181,6 +181,19 @@ const DataStore = (() => {
         const entry={id:genId(),...data}; tt.push(entry); set(KEYS.timetable,tt); return entry;
     }
     function deleteTimetableEntry(id)  { set(KEYS.timetable, getTimetable().filter(e=>e.id!==id)); }
+    function updateTimetableEntry(id, data) {
+        const tt = getTimetable();
+        const idx = tt.findIndex(e => e.id === id);
+        if (idx !== -1) {
+            // Check duplicate slot excluding self
+            const dup = tt.find(e => e.id !== id && e.day === data.day && e.period === data.period);
+            if (dup) return { error: 'Time slot already occupied' };
+            tt[idx] = { ...tt[idx], ...data };
+            set(KEYS.timetable, tt);
+            return tt[idx];
+        }
+        return { error: 'Entry not found' };
+    }
     function getTimetableByFaculty(fId){ return getTimetable().filter(e=>e.facultyId===fId); }
     function clearTimetable()          { set(KEYS.timetable,[]); }
 
@@ -258,7 +271,7 @@ const DataStore = (() => {
         getSubjects, getSubjectById, getSubjectsByDepartment, getSubjectsByFaculty, addSubject, updateSubject, deleteSubject, assignFacultyToSubject,
         getStudents, getStudentById, getStudentsByDepartment, getStudentsByDeptAndSemester, addStudent, deleteStudent,
         getMarks, getMarksBySubject, saveMarks, saveBulkMarks, areMarksEntered,
-        getTimetable, addTimetableEntry, deleteTimetableEntry, getTimetableByFaculty, clearTimetable,
+        getTimetable, addTimetableEntry, deleteTimetableEntry, updateTimetableEntry, getTimetableByFaculty, clearTimetable,
         getSubjectStatus, getSubjectStatusById, setSubjectStatus,
         getMarkVerification, verifyMarks, isMarksVerified, getVerificationDetails,
         getSyllabusUnits, getSyllabusUnitsBySubject, updateSyllabusUnit,

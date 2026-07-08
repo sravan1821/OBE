@@ -25,6 +25,7 @@ const App = (() => {
 
     /* =================== LOGIN PAGE =================== */
     function showLogin() {
+        document.body.className = 'theme-deep-blue';
         document.getElementById('login-page').style.display = '';
         document.getElementById('dashboard-page').style.display = 'none';
     }

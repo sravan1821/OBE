@@ -215,7 +215,12 @@ const CoordinatorModule = (() => {
                                     <td>Period ${e.period+1}</td>
                                     <td class="fw-600">${sub ? sub.name : '—'}</td>
                                     <td>${fac ? fac.name : '—'}</td>
-                                    <td><button class="btn btn-danger btn-xs tt-del" data-id="${e.id}">✕</button></td>
+                                    <td>
+                                        <div class="flex gap-xs">
+                                            <button class="btn btn-primary btn-xs tt-edit" data-id="${e.id}" style="padding: 4px 8px; font-size: 0.75rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">📝 Edit</button>
+                                            <button class="btn btn-danger btn-xs tt-del" data-id="${e.id}" style="padding: 4px 8px; font-size: 0.75rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">✕ Delete</button>
+                                        </div>
+                                    </td>
                                 </tr>`;
                             }).join('')}</tbody>
                         </table></div>`
@@ -238,12 +243,21 @@ const CoordinatorModule = (() => {
             });
         });
 
+        /* Edit entry from table */
+        c.querySelectorAll('.tt-edit').forEach(btn => {
+            btn.addEventListener('click', () => {
+                showTTModal(c, subjects, faculty, btn.dataset.id);
+            });
+        });
+
         /* Delete entry from table */
         c.querySelectorAll('.tt-del').forEach(btn => {
             btn.addEventListener('click', () => {
-                DataStore.deleteTimetableEntry(btn.dataset.id);
-                renderTimetable(c);
-                App.showToast('Entry removed', 'info');
+                if (confirm('Delete this timetable entry?')) {
+                    DataStore.deleteTimetableEntry(btn.dataset.id);
+                    renderTimetable(c);
+                    App.showToast('Entry removed', 'info');
+                }
             });
         });
 
@@ -260,15 +274,21 @@ const CoordinatorModule = (() => {
         document.getElementById('tt-add-btn').addEventListener('click', () => showTTModal(c, subjects, faculty));
     }
 
-    function showTTModal(c, subjects, faculty) {
+    function showTTModal(c, subjects, faculty, existingEntryId = null) {
         const modal = document.getElementById('tt-modal');
         modal.style.display = '';
+
+        let entry = null;
+        if (existingEntryId) {
+            entry = DataStore.getTimetable().find(e => e.id === existingEntryId);
+        }
+
         modal.innerHTML = `
         <div class="inline-modal">
             <div class="modal-overlay" id="tt-modal-overlay"></div>
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>Add Timetable Entry</h2>
+                    <h2>${existingEntryId ? 'Edit Timetable Entry' : 'Add Timetable Entry'}</h2>
                     <button class="modal-close" id="tt-modal-close">&times;</button>
                 </div>
                 <div class="modal-body">
@@ -276,27 +296,27 @@ const CoordinatorModule = (() => {
                         <label class="form-label">Subject</label>
                         <select class="form-select" id="tt-subject">
                             <option value="">— Select —</option>
-                            ${subjects.map(s => `<option value="${s.id}">${s.code} — ${s.name}</option>`).join('')}
+                            ${subjects.map(s => `<option value="${s.id}" ${entry && entry.subjectId === s.id ? 'selected' : ''}>${s.code} — ${s.name}</option>`).join('')}
                         </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Faculty</label>
                         <select class="form-select" id="tt-faculty">
                             <option value="">— Select —</option>
-                            ${faculty.map(f => `<option value="${f.id}">${f.name}</option>`).join('')}
+                            ${faculty.map(f => `<option value="${f.id}" ${entry && entry.facultyId === f.id ? 'selected' : ''}>${f.name}</option>`).join('')}
                         </select>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">Day</label>
                             <select class="form-select" id="tt-day">
-                                ${DAYS.map((d,i) => `<option value="${i}">${d}</option>`).join('')}
+                                ${DAYS.map((d,i) => `<option value="${i}" ${entry && entry.day === i ? 'selected' : ''}>${d}</option>`).join('')}
                             </select>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Period</label>
                             <select class="form-select" id="tt-period">
-                                ${PERIODS.map((p,i) => `<option value="${i}">Period ${i+1}</option>`).join('')}
+                                ${PERIODS.map((p,i) => `<option value="${i}" ${entry && entry.period === i ? 'selected' : ''}>Period ${i+1}</option>`).join('')}
                             </select>
                         </div>
                     </div>
@@ -304,7 +324,7 @@ const CoordinatorModule = (() => {
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" id="tt-cancel">Cancel</button>
-                    <button class="btn btn-primary" id="tt-save">Add Entry</button>
+                    <button class="btn btn-primary" id="tt-save">${existingEntryId ? 'Save Changes' : 'Add Entry'}</button>
                 </div>
             </div>
         </div>`;
@@ -333,8 +353,14 @@ const CoordinatorModule = (() => {
                 return;
             }
 
-            const result = DataStore.addTimetableEntry({ subjectId:subId, facultyId:facId, day, period });
-            if (result.error) {
+            let result;
+            if (existingEntryId) {
+                result = DataStore.updateTimetableEntry(existingEntryId, { subjectId: subId, facultyId: facId, day, period });
+            } else {
+                result = DataStore.addTimetableEntry({ subjectId: subId, facultyId: facId, day, period });
+            }
+
+            if (result && result.error) {
                 const err = document.getElementById('tt-add-error');
                 err.textContent = result.error;
                 err.style.display = 'block';
@@ -343,7 +369,7 @@ const CoordinatorModule = (() => {
 
             closeFn();
             renderTimetable(c);
-            App.showToast('Timetable entry added!', 'success');
+            App.showToast(existingEntryId ? 'Timetable entry updated!' : 'Timetable entry added!', 'success');
         });
     }
 

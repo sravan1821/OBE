@@ -578,7 +578,7 @@ const HODModule = (() => {
                                             </select>
                                         </td>
                                         <td>
-                                            <button class="btn btn-success btn-xs save-assign" data-subject="${s.id}">💾 Save</button>
+                                            <button class="btn btn-success btn-xs save-assign" data-subject="${s.id}" style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; font-weight: 600; border-radius: 6px; font-size: 0.8rem; cursor: pointer; transition: all 0.2s;">💾 Save</button>
                                         </td>
                                     </tr>`;
                                 }).join('')}

@@ -194,12 +194,12 @@ const ManagementModule = (() => {
                                     let actionsHTML = '';
 
                                     if (!entered) {
-                                        statusBadge = '<span class="badge" style="background:var(--danger);color:white">Not Entered</span>';
+                                        statusBadge = `<span class="badge" style="background: rgba(207, 44, 49, 0.08); color: var(--danger); border: 1px solid rgba(207, 44, 49, 0.2); font-weight: 600; padding: 5px 10px; border-radius: 6px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">⚠️ Not Entered</span>`;
                                         filterTag = 'pending';
                                         actionsHTML = `
-                                            <div class="flex gap-sm">
-                                                <span class="text-muted text-sm" style="margin-right:10px;">Waiting for Faculty</span>
-                                                <button class="btn btn-warning btn-xs notify-btn" data-fid="${s.facultyId}">🔔 Send Notification</button>
+                                            <div class="flex gap-sm" style="align-items: center; flex-wrap: nowrap; white-space: nowrap;">
+                                                <span class="text-muted text-sm" style="font-weight: 500; font-size: 0.85rem; color: #64748B; margin-right: 8px; display: inline-flex; align-items: center; gap: 4px;">⏳ Waiting for Faculty</span>
+                                                <button class="btn btn-warning btn-xs notify-btn" data-fid="${s.facultyId}" style="background: rgba(245, 158, 11, 0.1); color: #D97706; border: 1px solid rgba(245, 158, 11, 0.25); font-weight: 600; font-size: 0.8rem; padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 4px;" onmouseover="this.style.background='#F59E0B'; this.style.color='white';" onmouseout="this.style.background='rgba(245, 158, 11, 0.1)'; this.style.color='#D97706';">🔔 Send Notification</button>
                                             </div>
                                         `;
                                     } else {
