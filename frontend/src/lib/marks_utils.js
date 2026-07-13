@@ -8,6 +8,8 @@
        MID Total = (Desc/30 × 15) + (UT/20 × 10) + (Asgn/10 × 5) = max 30
      Final Internal = (MID-I Total + MID-II Total) / 2 = max 30
    ============================================================ */
+import { icon, iconText } from './icons.js';
+
 export const MarksUtils = (() => {
     function r2(n) { return Math.round(n * 100) / 100; }
 
@@ -37,7 +39,7 @@ export const MarksUtils = (() => {
         const fac      = sub.facultyId ? DataStore.getFacultyById(sub.facultyId) : null;
 
         if (!students.length)
-            return '<div class="empty-state"><div class="empty-icon">📭</div><p>No students found for this subject.</p></div>';
+            return `<div class="empty-state"><div class="empty-icon">${icon('inbox', { size: 48 })}</div><p>No students found for this subject.</p></div>`;
 
         const gv = (o,k) => (o && o[k] !== undefined && o[k] !== null) ? o[k] : '';
         const cell = (stuId, mid, field, max, val) => {
@@ -83,11 +85,11 @@ export const MarksUtils = (() => {
                     <h2>${sub.code} — ${sub.name}</h2>
                     <div class="text-sm text-muted mt-1">Faculty: ${fac?fac.name:'Unassigned'} &bull; Semester ${sub.semester} &bull; ${students.length} students</div>
                 </div>
-                ${editable ? '<button class="btn btn-success" id="save-marks-btn">💾 Save All Marks</button>' : ''}
+                ${editable ? `<button class="btn btn-success" id="save-marks-btn">${iconText('save', 'Save All Marks')}</button>` : ''}
             </div>
             <div class="card-body" style="padding:0.6rem">
                 <div style="background:rgba(79,106,255,0.05);border:1px solid rgba(79,106,255,0.1);border-radius:8px;padding:0.5rem 0.8rem;margin-bottom:0.8rem;font-size:0.75rem;color:var(--text-secondary);">
-                    📐 <b>Desc</b> = Best 3 of Q1-Q6 (/30) → ×15/30 &nbsp;|&nbsp; <b>UT</b> (/20) → ×10/20 &nbsp;|&nbsp; <b>Asgn</b> (/10) → ×5/10 &nbsp;|&nbsp; <b>MID Total = /30</b> &nbsp;|&nbsp; <b>Final = (MID-I + MID-II) / 2</b>
+                    ${icon('ruler', { size: 16 })} <b>Desc</b> = Best 3 of Q1-Q6 (/30) → ×15/30 &nbsp;|&nbsp; <b>UT</b> (/20) → ×10/20 &nbsp;|&nbsp; <b>Asgn</b> (/10) → ×5/10 &nbsp;|&nbsp; <b>MID Total = /30</b> &nbsp;|&nbsp; <b>Final = (MID-I + MID-II) / 2</b>
                 </div>
                 <div class="table-wrapper" style="max-height:65vh;overflow:auto;">
                     <table class="table marks-table" style="font-size:0.76rem;white-space:nowrap;">

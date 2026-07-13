@@ -4,6 +4,7 @@
 const App = (() => {
     let currentUser = null;
     let currentRole = null;
+    const SIDEBAR_STATE_KEY = 'obe_sidebar_collapsed';
 
     /* =================== INIT =================== */
     function init() {
@@ -93,29 +94,29 @@ const App = (() => {
     /* --- Sidebar --- */
     const NAV = {
         faculty: [
-            { id:'dashboard', icon:'📊', label:'My Dashboard' },
-            { id:'marks',     icon:'📝', label:'Enter Marks' },
-            { id:'syllabus',  icon:'📖', label:'Syllabus Tracking' },
-            { id:'timetable', icon:'📅', label:'My Timetable' }
+            { id:'dashboard', icon:'layout-dashboard', label:'My Dashboard' },
+            { id:'marks',     icon:'file-text',        label:'Enter Marks' },
+            { id:'syllabus',  icon:'book-open',        label:'Syllabus Tracking' },
+            { id:'timetable', icon:'calendar',         label:'My Timetable' }
         ],
         coordinator: [
-            { id:'dashboard', icon:'📊', label:'Dashboard' },
-            { id:'marks',     icon:'📝', label:'Marks Entry' },
-            { id:'timetable', icon:'📅', label:'Assign Timetable' },
-            { id:'status',    icon:'📈', label:'Subject Status' }
+            { id:'dashboard', icon:'layout-dashboard', label:'Dashboard' },
+            { id:'marks',     icon:'file-text',        label:'Marks Entry' },
+            { id:'timetable', icon:'calendar',         label:'Assign Timetable' },
+            { id:'status',    icon:'trending-up',      label:'Subject Status' }
         ],
         management: [
-            { id:'dashboard', icon:'📊', label:'Dashboard' },
-            { id:'verify',    icon:'✅', label:'Verify Marks' }
+            { id:'dashboard', icon:'layout-dashboard', label:'Dashboard' },
+            { id:'verify',    icon:'check-circle',     label:'Verify Marks' }
         ],
         hod: [
-            { id:'dashboard',   icon:'📊', label:'Dashboard' },
-            { id:'marks',       icon:'📝', label:'Marks Entry' },
-            { id:'faculty',     icon:'👨‍🏫', label:'Manage Faculty' },
-            { id:'departments', icon:'🏛️', label:'Departments' },
-            { id:'subjects',    icon:'📚', label:'Subjects' },
-            { id:'assignments', icon:'🔗', label:'Assignments' },
-            { id:'syllabus',    icon:'📖', label:'Syllabus' }
+            { id:'dashboard',   icon:'layout-dashboard', label:'Dashboard' },
+            { id:'marks',       icon:'file-text',        label:'Marks Entry' },
+            { id:'faculty',     icon:'graduation-cap',   label:'Manage Faculty' },
+            { id:'departments', icon:'building-2',       label:'Departments' },
+            { id:'subjects',    icon:'book-open',        label:'Subjects' },
+            { id:'assignments', icon:'link',             label:'Assignments' },
+            { id:'syllabus',    icon:'book-open',        label:'Syllabus' }
         ]
     };
 
@@ -131,15 +132,18 @@ const App = (() => {
                 <div class="sidebar-logo" style="font-size: 1.15rem; font-weight: 800; letter-spacing: -0.2px;">OBE MicTech</div>
             </div>
             <nav class="sidebar-nav">
-                <div style="padding-bottom:10px; font-size:12px; color:rgba(255,255,255,0.4); text-transform:uppercase; font-weight:700;">Menu</div>
+                <div class="sidebar-nav-title" style="padding-bottom:10px; font-size:12px; color:rgba(255,255,255,0.4); text-transform:uppercase; font-weight:700;">Menu</div>
                 ${items.map((it, i) => `
-                    <a href="#" class="nav-item ${i===0?'active':''}" data-section="${it.id}">
-                        <span class="nav-icon">${it.icon}</span>
+                    <a href="#" class="nav-item ${i===0?'active':''}" data-section="${it.id}" title="${it.label}">
+                        <span class="nav-icon">${icon(it.icon, { size: 20 })}</span>
                         <span class="nav-label">${it.label}</span>
                     </a>`).join('')}
             </nav>
             <div class="sidebar-footer">
-                <button class="btn-logout" id="btn-logout"><span>🚪</span> Logout</button>
+                <button class="btn-logout" id="btn-logout" title="Logout">
+                    <span class="nav-icon">${icon('log-out', { size: 16 })}</span>
+                    <span class="logout-label">Logout</span>
+                </button>
             </div>`;
 
         // Assign role-specific theme class automatically to look professional
@@ -157,10 +161,15 @@ const App = (() => {
 
         main.innerHTML = `
             <div class="topbar">
-                <div class="topbar-title">Dashboard Overview</div>
+                <div class="topbar-left">
+                    <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Collapse sidebar" title="Collapse sidebar">
+                        ${icon('panel-left-close', { size: 18 })}
+                    </button>
+                    <div class="topbar-title">Dashboard Overview</div>
+                </div>
                 <div class="topbar-right" style="display:flex; align-items:center;">
                     <div class="notifications-container" style="position:relative; margin-right:1.5rem; cursor:pointer;" onclick="App.toggleNotifications()">
-                        <span style="font-size:1.4rem;">🔔</span>
+                        ${icon('bell', { size: 22, className: 'inline-icon' })}
                         <span id="notif-badge" class="badge" style="display:none; position:absolute; top:-5px; right:-10px; background:var(--danger); color:white; border-radius:50%; padding:2px 6px; font-size:0.7rem; font-weight:bold;">0</span>
                         <div id="notif-dropdown" style="display:none; position:absolute; right:-10px; top:40px; width:300px; background:var(--bg-card); box-shadow:var(--shadow-lg); border-radius:8px; z-index:100; border:1px solid var(--border-color); max-height:350px; overflow-y:auto; padding:0; text-align:left;">
                         </div>
@@ -187,7 +196,33 @@ const App = (() => {
         });
 
         document.getElementById('btn-logout').addEventListener('click', logout);
+        document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar);
+        applySidebarState();
         refreshNotifications();
+    }
+
+    function isSidebarCollapsed() {
+        return localStorage.getItem(SIDEBAR_STATE_KEY) === '1';
+    }
+
+    function applySidebarState() {
+        const page = document.getElementById('dashboard-page');
+        const toggleBtn = document.getElementById('sidebar-toggle');
+        if (!page || !toggleBtn) return;
+
+        const collapsed = isSidebarCollapsed();
+        page.classList.toggle('sidebar-collapsed', collapsed);
+        toggleBtn.innerHTML = collapsed
+            ? icon('panel-left-open', { size: 18 })
+            : icon('panel-left-close', { size: 18 });
+        toggleBtn.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
+        toggleBtn.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+    }
+
+    function toggleSidebar() {
+        const nextCollapsed = !isSidebarCollapsed();
+        localStorage.setItem(SIDEBAR_STATE_KEY, nextCollapsed ? '1' : '0');
+        applySidebarState();
     }
 
     /* --- Notifications --- */
@@ -287,7 +322,7 @@ const App = (() => {
         modal.style.maxWidth = '400px';
         modal.style.textAlign = 'center';
         modal.innerHTML = `
-            <div style="font-size:3rem; margin-bottom:10px;">🚨</div>
+            <div style="margin-bottom:10px; display:flex; justify-content:center;">${icon('alert-triangle', { size: 48, className: 'inline-icon' })}</div>
             <h2 style="margin:0 0 10px 0; color:white;">Urgent Notification</h2>
             <p style="font-size:1.1rem; margin-bottom:20px;">${msg}</p>
             <button style="background:white; color:#ef4444; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="this.parentElement.parentElement.remove()">Acknowledge</button>

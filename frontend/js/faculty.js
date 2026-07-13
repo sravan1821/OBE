@@ -36,22 +36,22 @@ const FacultyModule = (() => {
 
             <div class="stats-grid">
                 <div class="stat-card blue">
-                    <div class="stat-icon">📚</div>
+                    <div class="stat-icon">${icon('book-open', { size: 24 })}</div>
                     <div class="stat-value">${subjects.length}</div>
                     <div class="stat-label">Assigned Subjects</div>
                 </div>
                 <div class="stat-card purple">
-                    <div class="stat-icon">👥</div>
+                    <div class="stat-icon">${icon('users', { size: 24 })}</div>
                     <div class="stat-value">${totalStudents}</div>
                     <div class="stat-label">Total Students</div>
                 </div>
                 <div class="stat-card green">
-                    <div class="stat-icon">✅</div>
+                    <div class="stat-icon">${icon('check-circle', { size: 24 })}</div>
                     <div class="stat-value">${marksEntered} / ${subjects.length}</div>
                     <div class="stat-label">Marks Entered</div>
                 </div>
                 <div class="stat-card gold">
-                    <div class="stat-icon">📧</div>
+                    <div class="stat-icon">${icon('mail', { size: 24 })}</div>
                     <div class="stat-value">${user.email ? user.email.split('@')[0] : '—'}</div>
                     <div class="stat-label">Email</div>
                 </div>
@@ -107,8 +107,8 @@ const FacultyModule = (() => {
                                     let vBadge = '<span class="badge badge-neutral">Pending</span>';
                                     if (vd) {
                                         vBadge = vd.verified
-                                            ? '<span class="verify-badge verified">✓ Verified</span>'
-                                            : '<span class="verify-badge rejected">✗ Rejected</span>';
+                                            ? `<span class="verify-badge verified">${iconText('check', 'Verified', { size: 14 })}</span>`
+                                            : `<span class="verify-badge rejected">${iconText('x', 'Rejected', { size: 14 })}</span>`;
                                     }
                                     return `<tr>
                                         <td><span class="badge badge-info">${s.code}</span></td>
@@ -300,7 +300,7 @@ const FacultyModule = (() => {
                             </select>
                         </div>
                         <div class="upload-zone" id="file-drop-zone">
-                            <div class="upload-icon">📄</div>
+                            <div class="upload-icon">${icon('file-text', { size: 48 })}</div>
                             <div class="upload-title">Click or drag Excel file here</div>
                             <div class="upload-subtitle">Format: Autonomous Marks Statement (.xlsx)</div>
                             <input type="file" id="excel-file-input" accept=".xlsx, .xls">
@@ -308,9 +308,9 @@ const FacultyModule = (() => {
                         <div id="upload-status" style="margin-top: 1rem; text-align: center; font-weight: 600;"></div>
                         
                         <div style="margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
-                            <button id="btn-process-save" class="btn-pro btn-pro-primary" style="display:none;">💾 Process & Save to DataStore</button>
-                            <button id="btn-download-co" class="btn-pro btn-pro-success" style="display:none;">📥 Download CO Attainment</button>
-                            <button id="btn-notify-hod" class="btn-pro btn-pro-warning" style="display:none;">🔔 Send Urgent Notification</button>
+                            <button id="btn-process-save" class="btn-pro btn-pro-primary" style="display:none;">${iconText('save', 'Process & Save to DataStore')}</button>
+                            <button id="btn-download-co" class="btn-pro btn-pro-success" style="display:none;">${iconText('download', 'Download CO Attainment')}</button>
+                            <button id="btn-notify-hod" class="btn-pro btn-pro-warning" style="display:none;">${iconText('bell', 'Send Urgent Notification')}</button>
                         </div>
                     </div>
                 </div>
