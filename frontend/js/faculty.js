@@ -4,14 +4,19 @@
    ============================================================ */
 const FacultyModule = (() => {
 
+    const ROMAN_NUMERALS = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+    function getRomanSemester(sem) {
+        return ROMAN_NUMERALS[parseInt(sem)] || sem;
+    }
+
     function renderSection(section) {
         const c = App.getContent();
         switch (section) {
-            case 'dashboard': renderDashboard(c); break;
-            case 'marks':     renderMarksEntry(c); break;
-            case 'syllabus':  renderSyllabus(c); break;
-            case 'timetable': renderTimetable(c); break;
-            default:          renderDashboard(c);
+            case 'dashboard':         renderDashboard(c); break;
+            case 'assigned_subjects': renderAssignedSubjects(c); break;
+            case 'marks':             renderMarksEntry(c); break;
+            case 'syllabus':          renderSyllabus(c); break;
+            default:                  renderDashboard(c);
         }
     }
 
@@ -34,39 +39,16 @@ const FacultyModule = (() => {
                 <p>${dept ? dept.name : 'Department'} &bull; Faculty Dashboard</p>
             </div>
 
-            <div class="stats-grid">
-                <div class="stat-card blue">
-                    <div class="stat-icon">${icon('book-open', { size: 24 })}</div>
-                    <div class="stat-value">${subjects.length}</div>
-                    <div class="stat-label">Assigned Subjects</div>
-                </div>
-                <div class="stat-card purple">
-                    <div class="stat-icon">${icon('users', { size: 24 })}</div>
-                    <div class="stat-value">${totalStudents}</div>
-                    <div class="stat-label">Total Students</div>
-                </div>
-                <div class="stat-card green">
-                    <div class="stat-icon">${icon('check-circle', { size: 24 })}</div>
-                    <div class="stat-value">${marksEntered} / ${subjects.length}</div>
-                    <div class="stat-label">Marks Entered</div>
-                </div>
-                <div class="stat-card gold">
-                    <div class="stat-icon">${icon('mail', { size: 24 })}</div>
-                    <div class="stat-value">${user.email ? user.email.split('@')[0] : '—'}</div>
-                    <div class="stat-label">Email</div>
-                </div>
-            </div>
-
             <div class="grid grid-2" style="margin-bottom:2rem;">
                 <!-- Marks Entry Donut Chart -->
                 <div class="card" style="margin-bottom:0;">
-                    <div class="card-header"><h3>Marks Entry Status</h3></div>
+                    <div class="card-header"><h3>Attainment Status</h3></div>
                     <div class="card-body" style="display:flex; align-items:center; justify-content:center; gap:20px; min-height:180px;">
                         <div style="flex:1; min-width: 130px; max-width: 130px; margin: 0 auto;">
                             <canvas id="fac-dashboard-chart"></canvas>
                         </div>
                         <div style="flex:1; font-size:0.95rem;">
-                            <p style="margin-bottom:0.5rem;"><span style="display:inline-block; width:12px; height:12px; background:#1E73BE; margin-right:8px; border-radius:3px;"></span>Entered: <strong>${marksEntered}</strong></p>
+                            <p style="margin-bottom:0.5rem;"><span style="display:inline-block; width:12px; height:12px; background:#1E73BE; margin-right:8px; border-radius:3px;"></span>Assigned: <strong>${marksEntered}</strong></p>
                             <p><span style="display:inline-block; width:12px; height:12px; background:#cf2c31; margin-right:8px; border-radius:3px;"></span>Pending: <strong>${subjects.length - marksEntered}</strong></p>
                         </div>
                     </div>
@@ -113,7 +95,7 @@ const FacultyModule = (() => {
                                     return `<tr>
                                         <td><span class="badge badge-info">${s.code}</span></td>
                                         <td class="fw-600">${s.name}</td>
-                                        <td>Sem ${s.semester}</td>
+                                        <td>Sem ${getRomanSemester(s.semester)}</td>
                                         <td>${s.credits}</td>
                                         <td>
                                             <span class="status-dot ${entered?'green':'red'}"></span>
@@ -135,7 +117,7 @@ const FacultyModule = (() => {
                 new Chart(ctx, {
                     type: 'doughnut',
                     data: {
-                        labels: ['Entered', 'Pending'],
+                        labels: ['Assigned', 'Pending'],
                         datasets: [{
                             data: [marksEntered, subjects.length - marksEntered],
                             backgroundColor: ['#1e73be', '#cf2c31'],
@@ -154,123 +136,662 @@ const FacultyModule = (() => {
         }, 100);
     }
 
-    /* =================== SYLLABUS TRACKING =================== */
-    function renderSyllabus(c) {
-        const user = App.getCurrentUser();
-        const subjects = DataStore.getSubjectsByFaculty(user.id);
-        
-        c.innerHTML = `
-        <div class="fade-in">
-            <div class="page-header" style="margin-bottom: 2rem;">
-                <h1>Syllabus Tracking</h1>
-                <p>Track your syllabus completion status for assigned subjects.</p>
-            </div>
-            
-            <div class="form-group mb-4" style="max-width:300px;">
-                <label class="form-label">Select Subject</label>
-                <select class="form-select" id="fac-syl-select">
-                    <option value="">— Choose a subject —</option>
-                    ${subjects.map(s => `<option value="${s.id}">${s.code} — ${s.name}</option>`).join('')}
-                </select>
-            </div>
-            
-            <div id="syllabus-content"></div>
-        </div>`;
-        
-        document.getElementById('fac-syl-select').addEventListener('change', (e) => {
-            const sId = e.target.value;
-            const container = document.getElementById('syllabus-content');
-            if(!sId) { container.innerHTML = ''; return; }
-            
-            const units = DataStore.getSyllabusUnitsBySubject(sId);
-            container.innerHTML = `
-                <div class="card">
-                    <div class="card-header"><h2>Units</h2></div>
-                    <div class="card-body">
-                        ${units.map(u => `
-                            <div style="display:flex; align-items:center; padding:15px; border-bottom:1px solid var(--border-color);">
-                                <input type="checkbox" id="unit-${u.id}" ${u.isCompleted ? 'checked' : ''} style="width:20px; height:20px; margin-right:15px; cursor:pointer;">
-                                <label for="unit-${u.id}" style="font-size:1.1rem; font-weight:500; cursor:pointer;">${u.title}</label>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `;
-            
-            units.forEach(u => {
-                document.getElementById(`unit-${u.id}`).addEventListener('change', (ev) => {
-                    DataStore.updateSyllabusUnit(u.id, ev.target.checked);
-                    App.showToast('Syllabus updated successfully');
-                });
-            });
-        });
+    /* ======================== SEED / STATIC OUTCOMES AND OUTCOME MAPPING ======================== */
+    const COURSE_OUTCOMES = {
+        'sub_1': [
+            { co: 'CO1', desc: 'Understand the key concepts of algorithm analysis, asymptotic notations, and Big-O complexity.' },
+            { co: 'CO2', desc: 'Design and implement linear data structures like stacks, queues, and linked lists for efficient data storage.' },
+            { co: 'CO3', desc: 'Develop methods utilizing non-linear structures including trees and graphs to solve complex computing challenges.' },
+            { co: 'CO4', desc: 'Select and implement appropriate sorting, searching, and hashing algorithms for diverse datasets.' },
+            { co: 'CO5', desc: 'Formulate dynamic solutions utilizing robust memory allocation and structural design principles.' }
+        ],
+        'sub_2': [
+            { co: 'CO1', desc: 'Identify and describe relational database architectures, components, and Entity-Relationship models.' },
+            { co: 'CO2', desc: 'Formulate relational algebraic expressions and complex SQL queries to query and modify database systems.' },
+            { co: 'CO3', desc: 'Apply structural normalization (1NF to BCNF) to design robust, anomaly-free relational databases.' },
+            { co: 'CO4', desc: 'Analyze concurrent transaction executions, database states, locking mechanisms, and crash recovery schemes.' },
+            { co: 'CO5', desc: 'Implement storage security policies and describe distributed and modern NoSQL databases.' }
+        ],
+        'sub_3': [
+            { co: 'CO1', desc: 'Examine operating system architectures, service abstractions, and process control mechanisms.' },
+            { co: 'CO2', desc: 'Develop process synchronization solutions, CPU scheduling algorithms, and deadlock resolution procedures.' },
+            { co: 'CO3', desc: 'Evaluate physical memory allocation, paging schemes, segmentation, and virtual memory virtualization.' },
+            { co: 'CO4', desc: 'Formulate storage management plans including disk head scheduling, directory structures, and file protection.' },
+            { co: 'CO5', desc: 'Explain security barriers, access control, virtual machines, and sandboxed computing systems.' }
+        ],
+        'sub_4': [
+            { co: 'CO1', desc: 'Differentiate TCP/IP and OSI protocol architectures, routing topologies, and networking design goals.' },
+            { co: 'CO2', desc: 'Implement framing, error flow controls (sliding window), and error checking in link layers.' },
+            { co: 'CO3', desc: 'Implement CIDR subnets, IPv4/IPv6 packet headers, and static/dynamic network routing protocols.' },
+            { co: 'CO4', desc: 'Analyze transport layer congestion controls, packet flow algorithms, and TCP window controls.' },
+            { co: 'CO5', desc: 'Configure standard application protocols (DNS, HTTP, SMTP) and describe basic network cryptographies.' }
+        ]
+    };
+
+    const PROGRAM_OUTCOMES = [
+        { po: 'PO1', title: 'Engineering Knowledge', desc: 'Apply knowledge of mathematics, science, engineering fundamentals, and specialization to solve complex engineering problems.' },
+        { po: 'PO2', title: 'Problem Analysis', desc: 'Identify, formulate, research literature, and analyze complex engineering problems reaching substantiated conclusions.' },
+        { po: 'PO3', title: 'Design/Development of Solutions', desc: 'Design solutions for complex engineering problems and design system components or processes that meet specific needs.' },
+        { po: 'PO4', title: 'Conduct Investigations of Complex Problems', desc: 'Use research-based knowledge and research methods including design of experiments, analysis, and interpretation of data.' },
+        { po: 'PO5', title: 'Modern Tool Usage', desc: 'Create, select, and apply appropriate techniques, resources, and modern engineering and IT tools.' },
+        { po: 'PO6', title: 'The Engineer and Society', desc: 'Apply reasoning informed by contextual knowledge to assess societal, health, safety, legal, and cultural issues.' },
+        { po: 'PO7', title: 'Environment and Sustainability', desc: 'Understand the impact of professional engineering solutions in societal and environmental contexts, demonstrating sustainable development.' },
+        { po: 'PO8', title: 'Ethics', desc: 'Apply ethical principles and commit to professional ethics and responsibilities and norms of engineering practice.' },
+        { po: 'PO9', title: 'Individual and Team Work', desc: 'Function effectively as an individual, and as a member or leader in diverse teams and multi-disciplinary settings.' },
+        { po: 'PO10', title: 'Communication', desc: 'Communicate effectively on complex engineering activities with the engineering community and society at large.' },
+        { po: 'PO11', title: 'Project Management and Finance', desc: 'Demonstrate knowledge and understanding of engineering and management principles to manage projects.' },
+        { po: 'PO12', title: 'Life-long Learning', desc: 'Recognize the need for, and have the preparation and ability to engage in independent and life-long learning.' }
+    ];
+
+    function getCourseOutcomesForSubject(subject) {
+        if (COURSE_OUTCOMES[subject.id]) {
+            return COURSE_OUTCOMES[subject.id];
+        }
+        return [
+            { co: 'CO1', desc: `Explain foundational theories, paradigms, and fundamental mechanics of ${subject.name}.` },
+            { co: 'CO2', desc: `Analyze quantitative and qualitative models associated with the study of ${subject.name}.` },
+            { co: 'CO3', desc: `Design practical implementations and apply conceptual tools of ${subject.name} to realistic projects.` },
+            { co: 'CO4', desc: `Formulate diagnostic tests, debug errors, and optimize operations in ${subject.name} projects.` },
+            { co: 'CO5', desc: `Evaluate professional limitations, environmental footprint, and modern tool alternatives of ${subject.name}.` }
+        ];
     }
 
-    /* =================== TIMETABLE =================== */
-    function renderTimetable(c) {
+    function getCOPOMapping(subjectId) {
+        const mapping = {};
+        const cos = ['CO1', 'CO2', 'CO3', 'CO4', 'CO5'];
+        cos.forEach((co, idx) => {
+            mapping[co] = {};
+            for (let p = 1; p <= 12; p++) {
+                const po = `PO${p}`;
+                if (p <= 5) {
+                    mapping[co][po] = ((idx + p) % 2 === 0) ? 3 : 2;
+                } else if (p === 9 || p === 10 || p === 12) {
+                    mapping[co][po] = ((idx + p) % 3 === 0) ? 2 : 1;
+                } else if (p === 7 || p === 8) {
+                    mapping[co][po] = ((idx + p) % 4 === 0) ? 1 : '';
+                } else {
+                    mapping[co][po] = '';
+                }
+            }
+        });
+        return mapping;
+    }
+
+    let expandedSubjectId = null;
+    let activeSubTab = 'marks'; // 'marks' | 'syllabus' | 'indirect'
+    let activeMarksType = 'internal'; // 'internal' | 'external'
+    let activeSyllabusTab = 'cos'; // 'cos' | 'pos' | 'mapping'
+    const tempUploadedMarks = {}; // sId -> marks map
+    const tempUploadedFileName = {}; // sId -> string
+
+    const UPLOADS_KEY = 'obe_faculty_marks_uploads';
+    const charts = {};
+
+    function getUploadedMarks() {
+        try {
+            return JSON.parse(localStorage.getItem(UPLOADS_KEY)) || {};
+        } catch {
+            return {};
+        }
+    }
+
+    function saveUploadedMarks(subjectId, examType, marks) {
+        const data = getUploadedMarks();
+        if (!data[subjectId]) data[subjectId] = {};
+        data[subjectId][examType] = marks;
+        localStorage.setItem(UPLOADS_KEY, JSON.stringify(data));
+    }
+
+    /* =================== ASSIGNED SUBJECTS (EXPANDABLE FLOW & NESTED TAB VIEWS) =================== */    function renderAssignedSubjects(c) {
         const user = App.getCurrentUser();
-        const timetable = DataStore.getTimetableByFaculty(user.id);
         const subjects = DataStore.getSubjectsByFaculty(user.id);
-        
-        c.innerHTML = `
-        <div class="fade-in">
-            <div class="page-header" style="margin-bottom: 2rem;">
-                <h1>My Timetable</h1>
-                <p>View your assigned classes schedule.</p>
+        const uploads = getUploadedMarks();
+
+        if (expandedSubjectId) {
+            const s = subjects.find(sub => sub.id === expandedSubjectId);
+            const subUploads = uploads[s.id] || {};
+
+            c.innerHTML = `
+            <div class="fade-in">
+                <!-- Header with Back Button on the left side -->
+                <div class="page-header" style="margin-bottom: 2rem; display: flex; align-items: center; gap: 15px;">
+                    <button class="btn btn-secondary btn-sm back-to-subjects-btn" style="padding: 8px 16px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                        ${icon('arrow-left', { size: 16 })} Back
+                    </button>
+                    <div>
+                        <h1 style="margin: 0; font-size: 1.8rem; font-weight: 800; color: var(--text-dark);">${s.name}(${s.code})</h1>
+                        <p style="margin: 4px 0 0 0; color: var(--accent); font-size: 0.9rem; font-weight: 600;">
+                            Regulation: MIC-23 &bull; Academic Year: 2025-2026 &bull; Semester ${getRomanSemester(s.semester)}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="card" style="border-radius: 12px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); background: #fff; padding: 1.5rem;">
+                    <!-- Tabs selection menu -->
+                    <div class="menu-options-container" style="display: flex; gap: 8px; flex-wrap: wrap; border-bottom: 2px solid var(--border-color); padding-bottom: 12px; margin-bottom: 15px;">
+                        <button class="menu-option-btn ${activeSubTab === 'syllabus' ? 'active' : ''}" data-tab="syllabus">Syllabus</button>
+                        <button class="menu-option-btn ${activeSubTab === 'cos' ? 'active' : ''}" data-tab="cos">List of CO's</button>
+                        <button class="menu-option-btn ${activeSubTab === 'pos' ? 'active' : ''}" data-tab="pos">List of PO's</button>
+                        <button class="menu-option-btn ${activeSubTab === 'mapping' ? 'active' : ''}" data-tab="mapping">Articulatior matrix</button>
+                        <button class="menu-option-btn ${activeSubTab === 'marks' ? 'active' : ''}" data-tab="marks">Marks entry</button>
+                        <button class="menu-option-btn ${activeSubTab === 'indirect' ? 'active' : ''}" data-tab="indirect">Indirect Assessment</button>
+                    </div>
+
+                    <!-- Tab content panels -->
+                    <div class="tab-content-area" style="margin-top: 1.25rem;">
+                        ${renderCardSubTabContent(s, subUploads)}
+                    </div>
+                </div>
+            </div>`;
+
+            // Bind back button
+            c.querySelector('.back-to-subjects-btn').addEventListener('click', () => {
+                expandedSubjectId = null;
+                renderAssignedSubjects(c);
+            });
+
+            // Bind tab buttons
+            c.querySelectorAll('.menu-option-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    activeSubTab = btn.dataset.tab;
+                    if (activeSubTab === 'marks') {
+                        activeMarksType = 'internal';
+                    }
+                    renderAssignedSubjects(c);
+                });
+            });
+
+            // Bind events for the active panel
+            bindExpandedPanelEvents(c, s.id, uploads);
+
+        } else {
+            c.innerHTML = `
+            <div class="fade-in">
+                <div class="page-header" style="margin-bottom: 2rem;">
+                    <h1>Assigned Subjects</h1>
+                    <p>Select any subject card to view evaluation milestones, syllabus tracking, or direct/indirect outcome mapping.</p>
+                </div>
+
+                <div class="grid grid-3" id="assigned-subjects-grid">
+                    ${subjects.map(s => {
+                        return `
+                        <div class="card subject-card subject-card-clickable subject-select-card" data-sid="${s.id}" style="border-radius: 12px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); overflow: hidden; background: var(--bg-card); transition: all 0.3s ease; padding: 1.5rem; text-align: center; cursor: pointer;">
+                            <h3 style="margin: 0 auto 8px auto; font-size: 1.3rem; font-weight: 700; color: var(--text-dark);">
+                                ${s.name}(${s.code})
+                            </h3>
+                            <div style="font-size: 0.85rem; font-weight: 600; color: var(--accent); margin-bottom: 12px;">Regulation: MIC-23</div>
+                            <div style="font-size: 0.82rem; color: var(--text-muted);">
+                                Academic Year: 2025-2026 &bull; Semester ${getRomanSemester(s.semester)}
+                            </div>
+                            <div style="margin-top: 15px;">
+                                <button class="btn btn-outline btn-xs" style="font-weight: 600; padding: 6px 14px; border-radius: 6px;">
+                                    View Details &rarr;
+                                </button>
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>
+            </div>`;
+
+            // Bind click on subject cards to open detailed view
+            c.querySelectorAll('.subject-select-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const sId = card.dataset.sid;
+                    expandedSubjectId = sId;
+                    activeSubTab = 'syllabus';
+                    activeMarksType = 'internal';
+                    renderAssignedSubjects(c);
+                });
+            });
+        }
+    }
+
+    function renderCardSubTabContent(s, subUploads) {
+        const hasInternal = subUploads.internal && Object.keys(subUploads.internal).length > 0;
+        const hasExternal = subUploads.external && Object.keys(subUploads.external).length > 0;
+
+        if (activeSubTab === 'syllabus') {
+            const units = DataStore.getSyllabusUnitsBySubject(s.id);
+            return `
+            <div class="nested-panel">
+                <h4 style="margin: 0 0 1rem 0; font-size: 1.1rem; color: var(--primary); text-align: center;">Subject Units (Syllabus)</h4>
+                <div style="display: flex; flex-direction: column; gap: 12px; max-width: 700px; margin: 0 auto;">
+                    ${units.length > 0 ? units.map(u => `
+                        <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 15px; background: #fff; display: flex; justify-content: space-between; align-items: center; gap: 15px; text-align: left;">
+                            <div style="flex: 1;">
+                                <strong style="color: var(--text-dark); font-size: 0.95rem;">${u.title.toLowerCase().startsWith('unit') ? u.title : `Unit ${u.unitNumber}: ${u.title}`}</strong>
+                                <p style="margin: 4px 0 0 0; font-size: 0.82rem; color: var(--text-muted); line-height: 1.4;">${u.description || 'No description available for this unit.'}</p>
+                            </div>
+                            <span class="badge ${u.isCompleted ? 'badge-success' : 'badge-neutral'}" style="padding: 4px 10px; font-size: 0.75rem; font-weight: 600; flex-shrink: 0;">
+                                ${u.isCompleted ? 'Completed' : 'In Progress'}
+                            </span>
+                        </div>
+                    `).join('') : `
+                        <p style="text-align: center; color: var(--text-muted); font-style: italic;">No syllabus units loaded for this subject.</p>
+                    `}
+                </div>
             </div>
-            
-            <div class="card">
-                <div class="card-header"><h2>Schedule</h2></div>
-                <div class="card-body no-pad">
-                    <table class="table">
+            `;
+        }
+
+        if (activeSubTab === 'cos') {
+            const cos = getCourseOutcomesForSubject(s);
+            return `
+            <div class="nested-panel">
+                <h4 style="margin: 0 0 1rem 0; font-size: 1.1rem; color: var(--primary); text-align: center;">Course Outcomes (COs)</h4>
+                <div class="table-wrapper" style="max-width: 800px; margin: 0 auto;">
+                    <table class="table text-left" style="font-size: 0.9rem;">
                         <thead>
-                            <tr><th>Day</th><th>Period</th><th>Subject</th></tr>
+                            <tr>
+                                <th style="width: 100px;">Outcome</th>
+                                <th>Description / Statements</th>
+                            </tr>
                         </thead>
                         <tbody>
-                            ${timetable.length === 0 ? '<tr><td colspan="3" style="text-align:center;">No timetable assigned yet.</td></tr>' : ''}
-                            ${timetable.sort((a,b)=>a.day.localeCompare(b.day)).map(t => {
-                                const sub = subjects.find(s=>s.id===t.subjectId);
-                                return `<tr>
-                                    <td class="fw-600">${t.day}</td>
-                                    <td><span class="badge badge-info">${t.period}</span></td>
-                                    <td>${sub ? sub.name : 'Unknown'}</td>
-                                </tr>`;
-                            }).join('')}
+                            ${cos.map(item => `
+                                <tr>
+                                    <td><span class="badge badge-info" style="font-weight: 700;">${item.co}</span></td>
+                                    <td style="font-size: 0.9rem; font-weight: 500; color: var(--text-dark); line-height: 1.45;">${item.desc}</td>
+                                </tr>
+                            `).join('')}
                         </tbody>
                     </table>
                 </div>
             </div>
-        </div>`;
+            `;
+        }
 
-        setTimeout(() => {
-            const ctx = document.getElementById('fac-dashboard-chart');
+        if (activeSubTab === 'pos') {
+            return `
+            <div class="nested-panel">
+                <h4 style="margin: 0 0 1rem 0; font-size: 1.1rem; color: var(--primary); text-align: center;">Program Outcomes (POs)</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: left; max-width: 900px; margin: 0 auto;">
+                    ${PROGRAM_OUTCOMES.map(item => `
+                        <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; background: #fff; transition: all 0.2s ease;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                                <span class="badge badge-primary" style="font-weight: 800; font-size: 0.78rem; padding: 3px 6px;">${item.po}</span>
+                                <strong style="font-size: 0.9rem; color: var(--text-dark);">${item.title}</strong>
+                            </div>
+                            <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.35; margin: 0;">${item.desc}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            `;
+        }
+
+        if (activeSubTab === 'mapping') {
+            const mapping = getCOPOMapping(s.id);
+            const cos = ['CO1', 'CO2', 'CO3', 'CO4', 'CO5'];
+            return `
+            <div class="nested-panel">
+                <h4 style="margin: 0 0 1rem 0; font-size: 1.1rem; color: var(--primary); text-align: center;">Articulatior Matrix</h4>
+                <div style="max-width: 800px; margin: 0 auto;">
+                    <div style="margin-bottom: 0.75rem; font-size: 0.75rem; color: var(--text-muted); display: flex; gap: 12px; justify-content: flex-end;">
+                        <span>3 = High</span>
+                        <span>2 = Medium</span>
+                        <span>1 = Low</span>
+                        <span>- = None</span>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="table" style="text-align: center; font-size: 0.85rem;">
+                            <thead>
+                                <tr>
+                                    <th style="text-align: left;">Course Outcome</th>
+                                    ${Array.from({length: 12}, (_, i) => `<th>PO${i+1}</th>`).join('')}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${cos.map(co => `
+                                    <tr>
+                                        <td style="text-align: left; font-weight: 700; color: var(--text-dark);">${co}</td>
+                                        ${Array.from({length: 12}, (_, i) => {
+                                            const val = mapping[co][`PO${i+1}`];
+                                            let cellBg = '';
+                                            if (val === 3) cellBg = 'background: rgba(59, 130, 246, 0.12); font-weight: bold; color: #1d4ed8;';
+                                            else if (val === 2) cellBg = 'background: rgba(99, 102, 241, 0.08); font-weight: bold; color: #4338ca;';
+                                            else if (val === 1) cellBg = 'background: rgba(226, 232, 240, 0.4); color: #475569;';
+                                            return `<td style="${cellBg}">${val || '-'}</td>`;
+                                        }).join('')}
+                                    </tr>
+                                    `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            `;
+        }
+
+        if (activeSubTab === 'marks') {
+            const tempFile = tempUploadedFileName[s.id];
+            
+            return `
+            <div class="nested-panel">
+                <h4 style="margin: 0 0 1rem 0; font-size: 1.1rem; text-align: center; color: var(--primary);">Evaluation Marks Entry</h4>
+                
+                <div class="form-group" style="max-width: 300px; margin: 0 auto 1.5rem auto;">
+                    <label class="form-label" style="font-weight: 700; text-align: center; display: block; margin-bottom: 6px;">Assessment Milestone</label>
+                    <select class="form-select marks-type-select" style="text-align-last: center;">
+                        <option value="internal" ${activeMarksType === 'internal' ? 'selected' : ''}>Internal Marks</option>
+                        <option value="external" ${activeMarksType === 'external' ? 'selected' : ''}>External Marks</option>
+                    </select>
+                </div>
+
+                <!-- Aligned action buttons (identical styling for both - constrained widths to prevent unprofessional stretch) -->
+                <div style="display: flex; gap: 15px; justify-content: center; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                    <button class="btn btn-outline btn-sm marks-download-btn" style="padding: 8px 16px; font-weight: 600; width: 130px; display: inline-flex; align-items: center; justify-content: center;">
+                        ${iconText('download', 'Download')}
+                    </button>
+                    <button class="btn btn-outline btn-sm marks-upload-btn" style="padding: 8px 16px; font-weight: 600; width: 130px; display: inline-flex; align-items: center; justify-content: center;">
+                        ${iconText('upload', 'Upload')}
+                    </button>
+                    <button class="btn btn-primary btn-sm marks-submit-btn" style="padding: 8px 16px; font-weight: 600; width: 130px; display: inline-flex; align-items: center; justify-content: center;">
+                        ${iconText('check', 'Submit')}
+                    </button>
+                </div>
+
+                <!-- Dynamic upload zone placeholder -->
+                <div class="nested-upload-zone" style="display: none; border: 2px dashed var(--border-color); border-radius: 8px; padding: 20px; text-align: center; background: #fff; max-width: 400px; margin: 0 auto 1.5rem auto;">
+                    <div style="margin-bottom: 15px; color: var(--text-muted); font-size: 0.85rem;">
+                        ${icon('file-text', { size: 36, style: 'margin: 0 auto 8px auto; color: #94a3b8;' })}
+                        <span class="file-info-label">${tempFile ? `Selected: ${tempFile}` : `Drag & drop or click to upload the ${activeMarksType} Excel file`}</span>
+                        <input type="file" class="hidden-file-input" accept=".xlsx, .xls" style="display: none;">
+                    </div>
+                    <div style="display: flex; justify-content: center;">
+                        <button class="btn btn-xs btn-success autofill-demo-btn" style="font-size: 0.75rem; padding: 4px 12px; width: 160px; display: inline-flex; align-items: center; justify-content: center;">
+                            ${iconText('zap', 'Auto-Fill Demo Marks')}
+                        </button>
+                    </div>
+                    <div class="upload-status" style="margin-top: 10px; font-size: 0.8rem; font-weight: 600;">
+                        ${tempFile ? `<span style="color:var(--success)">Spreadsheet loaded. Click "Submit" to save!</span>` : ''}
+                    </div>
+                </div>
+
+                <!-- Marks verification state & chart -->
+                <div style="margin-top: 1.5rem; text-align: center;">
+                    <div style="font-size: 0.85rem; color: var(--text-muted); display: flex; gap: 15px; justify-content: center; margin-bottom: 1rem;">
+                        <span style="display: flex; align-items: center; gap: 5px;">
+                            <span class="status-dot ${hasInternal ? 'green' : 'red'}"></span> Internal uploaded
+                        </span>
+                        <span style="display: flex; align-items: center; gap: 5px;">
+                            <span class="status-dot ${hasExternal ? 'green' : 'red'}"></span> External uploaded
+                        </span>
+                    </div>
+
+                    ${hasInternal && hasExternal ? `
+                    <div class="chart-section" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 8px; background: rgba(0,0,0,0.005); max-width: 800px; margin: 0 auto;">
+                        <h4 style="margin: 0 0 15px 0; font-size: 1rem; color: var(--text-dark);">Cohort Marks Performance Graph (Internal vs External)</h4>
+                        <div style="height: 250px; position: relative;">
+                            <canvas id="chart-${s.id}"></canvas>
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+            `;
+        }
+
+        if (activeSubTab === 'indirect') {
+            return `
+            <div class="nested-panel" style="text-align: center;">
+                <h4 style="margin: 0 0 10px 0; color: var(--primary); font-size: 1.1rem;">Indirect Attainment (Course End Survey)</h4>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; max-width: 500px; margin-left: auto; margin-right: auto;">
+                    Provide student feedback scores (on a 0.0 - 3.0 scale) for each Course Outcome. This score reflects indirect survey evaluation feedback.
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 12px; max-width: 400px; margin: 0 auto; background: #fff; padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border-color); align-items: center;">
+                    ${['CO1', 'CO2', 'CO3', 'CO4', 'CO5'].map(co => `
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <strong style="color: var(--text-dark);">${co}:</strong>
+                            <input type="number" step="0.1" min="0" max="3" class="form-input survey-input" data-co="${co}" value="${(Math.random() * 0.5 + 2.2).toFixed(1)}" style="width: 80px; padding: 4px 8px; font-size: 0.85rem; text-align: center;">
+                        </div>
+                    `).join('')}
+                    <button class="btn btn-primary btn-sm submit-indirect-btn" style="margin-top: 10px; font-weight: 600; width: 220px; display: inline-flex; align-items: center; justify-content: center;">
+                        ${iconText('check', 'Submit Indirect Marks')}
+                    </button>
+                </div>
+            </div>
+            `;
+        }
+
+        return '';
+    }
+
+
+
+    function bindExpandedPanelEvents(c, sId, uploads) {
+        const panel = c.querySelector('.tab-content-area');
+        if (!panel) return;
+
+        const s = DataStore.getSubjectById(sId);
+        const students = DataStore.getStudentsByDeptAndSemester(s.departmentId, s.semester);
+
+        if (activeSubTab === 'marks') {
+            const selectType = panel.querySelector('.marks-type-select');
+            const dlBtn = panel.querySelector('.marks-download-btn');
+            const ulBtn = panel.querySelector('.marks-upload-btn');
+            const submitBtn = panel.querySelector('.marks-submit-btn');
+            const uploadZone = panel.querySelector('.nested-upload-zone');
+            const fileInput = panel.querySelector('.hidden-file-input');
+            const fileLabel = panel.querySelector('.file-info-label');
+            const statusText = panel.querySelector('.upload-status');
+
+            // Dropdown select change
+            selectType.addEventListener('change', (e) => {
+                activeMarksType = e.target.value;
+                renderAssignedSubjects(c);
+            });
+
+            // Download template (empty marks Excel sheet)
+            dlBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                downloadTemplateExcel(s, activeMarksType);
+            });
+
+            // Upload Excel display toggle
+            ulBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                uploadZone.style.display = uploadZone.style.display === 'none' ? 'block' : 'none';
+            });
+
+            // Hidden file selector click
+            uploadZone.addEventListener('click', (e) => {
+                if (e.target.closest('.autofill-demo-btn')) return; // skip for autofill
+                fileInput.click();
+            });
+
+            // File upload parsing
+            fileInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                statusText.textContent = `Reading file...`;
+                statusText.style.color = '#64748b';
+
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    try {
+                        const data = new Uint8Array(evt.target.result);
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const rows = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+
+                        let parsed = {};
+                        let validRows = 0;
+                        for (let i = 1; i < rows.length; i++) {
+                            const row = rows[i];
+                            if (!row || !row[1]) continue;
+                            const rollNo = String(row[1]).trim();
+                            const val = parseFloat(row[3]);
+                            parsed[rollNo] = isNaN(val) ? 0 : val;
+                            validRows++;
+                        }
+
+                        if (validRows > 0) {
+                            tempUploadedMarks[sId] = parsed;
+                            tempUploadedFileName[sId] = file.name;
+                            
+                            fileLabel.textContent = `Selected: ${file.name}`;
+                            statusText.textContent = `Spreadsheet successfully loaded (${validRows} rows). Click "Submit" to save!`;
+                            statusText.style.color = 'var(--success)';
+                        } else {
+                            statusText.textContent = `Invalid excel template format!`;
+                            statusText.style.color = '#ef4444';
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        statusText.textContent = `Error parsing excel spreadsheet.`;
+                        statusText.style.color = '#ef4444';
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            });
+
+            // Autofill demo marks
+            const autofillBtn = panel.querySelector('.autofill-demo-btn');
+            if (autofillBtn) {
+                autofillBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const demoMarks = {};
+                    students.forEach(student => {
+                        if (activeMarksType === 'internal') {
+                            demoMarks[student.rollNo] = Math.floor(Math.random() * 11) + 20; // 20 - 30 marks
+                        } else {
+                            demoMarks[student.rollNo] = Math.floor(Math.random() * 31) + 40; // 40 - 70 marks
+                        }
+                    });
+                    tempUploadedMarks[sId] = demoMarks;
+                    tempUploadedFileName[sId] = `demo_${activeMarksType}_data.xlsx`;
+                    
+                    fileLabel.textContent = `Selected: demo_${activeMarksType}_data.xlsx`;
+                    statusText.textContent = `Auto-filled mock data (${students.length} students). Click "Submit" to save!`;
+                    statusText.style.color = 'var(--success)';
+                });
+            }
+
+            // Submit processed marks
+            submitBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const marks = tempUploadedMarks[sId];
+                if (!marks) {
+                    App.showToast('Please upload or auto-fill marks before submitting.', 'warning');
+                    return;
+                }
+
+                saveUploadedMarks(sId, activeMarksType, marks);
+                delete tempUploadedMarks[sId];
+                delete tempUploadedFileName[sId];
+
+                App.showToast(`${activeMarksType.charAt(0).toUpperCase() + activeMarksType.slice(1)} marks submitted successfully!`, 'success');
+                renderAssignedSubjects(c);
+            });
+        }
+
+
+        if (activeSubTab === 'indirect') {
+            const indBtn = panel.querySelector('.submit-indirect-btn');
+            if (indBtn) {
+                indBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    App.showToast('Indirect attainment scores saved successfully!', 'success');
+                });
+            }
+        }
+
+        // Initialize and update Chart.js
+        const subUploads = uploads[sId] || {};
+        if (subUploads.internal && subUploads.external && activeSubTab === 'marks') {
+            const ctx = panel.querySelector(`#chart-${sId}`);
             if (ctx) {
-                new Chart(ctx, {
-                    type: 'doughnut',
+                if (charts[sId]) {
+                    charts[sId].destroy();
+                }
+
+                const rolls = Object.keys(subUploads.internal).sort();
+                const internalValues = rolls.map(r => subUploads.internal[r] || 0);
+                const externalValues = rolls.map(r => subUploads.external[r] || 0);
+
+                charts[sId] = new Chart(ctx, {
+                    type: 'bar',
                     data: {
-                        labels: ['Entered', 'Pending'],
-                        datasets: [{
-                            data: [marksEntered, subjects.length - marksEntered],
-                            backgroundColor: ['#1e73be', '#cf2c31'],
-                            borderWidth: 1
-                        }]
+                        labels: rolls,
+                        datasets: [
+                            {
+                                label: 'Internal Marks (Max 30)',
+                                data: internalValues,
+                                backgroundColor: 'rgba(59, 130, 246, 0.75)', // blue-500
+                                borderColor: 'rgba(59, 130, 246, 1)',
+                                borderWidth: 1.5,
+                                borderRadius: 4
+                            },
+                            {
+                                label: 'External Marks (Max 70)',
+                                data: externalValues,
+                                backgroundColor: 'rgba(239, 68, 68, 0.75)', // red-500
+                                borderColor: 'rgba(239, 68, 68, 1)',
+                                borderWidth: 1.5,
+                                borderRadius: 4
+                            }
+                        ]
                     },
                     options: {
                         responsive: true,
-                        plugins: {
-                            legend: { display: false }
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 70,
+                                grid: { color: 'rgba(0,0,0,0.05)' }
+                            },
+                            x: {
+                                grid: { display: false }
+                            }
                         },
-                        cutout: '70%'
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: { font: { size: 9, weight: 'bold' } }
+                            }
+                        }
                     }
                 });
             }
-        }, 100);
+        }
+    }
+
+    function downloadTemplateExcel(subject, examType) {
+        const students = DataStore.getStudentsByDeptAndSemester(subject.departmentId, subject.semester);
+        
+        // EMPTY template means marks column is blank so faculty can write in it
+        const header = ["S.No", "Regd.No", "Student Name", examType === 'internal' ? "Internal Marks (Max 30)" : "External Marks (Max 70)"];
+        const dataRows = students.map((s, idx) => [idx + 1, s.rollNo, s.name, ""]);
+
+        const aoa = [header, ...dataRows];
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        
+        ws['!cols'] = [
+            { wch: 6 },  // S.No
+            { wch: 15 }, // Regd.No
+            { wch: 25 }, // Student Name
+            { wch: 25 }  // Marks Column
+        ];
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, `${examType.toUpperCase()} Template`);
+
+        XLSX.writeFile(wb, `${subject.code}_${examType}_marks_template.xlsx`);
+        App.showToast(`Downloaded empty template for ${subject.code} ${examType} marks!`, 'success');
+    }
+
+    /* =================== TABBED SYLLABUS =================== */
+    function renderSyllabus(c) {
+        renderAssignedSubjects(c);
     }
 
     /* =================== EXCEL MARK ENTRY =================== */
     function renderMarksEntry(c) {
-        const user = App.getCurrentUser();
         const role = App.getCurrentRole();
+        const user = App.getCurrentUser();
         const subjects = (role === 'faculty') ? DataStore.getSubjectsByFaculty(user.id) : DataStore.getSubjects();
 
         c.innerHTML = `

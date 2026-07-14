@@ -94,11 +94,10 @@ const App = (() => {
     /* --- Sidebar --- */
     const NAV = {
         faculty: [
-            { id:'dashboard', icon:'layout-dashboard', label:'My Dashboard' },
-            { id:'marks',     icon:'file-text',        label:'Enter Marks' },
-            { id:'syllabus',  icon:'book-open',        label:'Syllabus Tracking' },
-            { id:'timetable', icon:'calendar',         label:'My Timetable' }
+            { id:'dashboard',         icon:'layout-dashboard', label:'My Dashboard' },
+            { id:'assigned_subjects', icon:'book-open',        label:'Assigned Subjects' }
         ],
+
         coordinator: [
             { id:'dashboard', icon:'layout-dashboard', label:'Dashboard' },
             { id:'marks',     icon:'file-text',        label:'Marks Entry' },
@@ -139,11 +138,8 @@ const App = (() => {
                         <span class="nav-label">${it.label}</span>
                     </a>`).join('')}
             </nav>
-            <div class="sidebar-footer">
-                <button class="btn-logout" id="btn-logout" title="Logout">
-                    <span class="nav-icon">${icon('log-out', { size: 16 })}</span>
-                    <span class="logout-label">Logout</span>
-                </button>
+            <div class="sidebar-footer" style="padding: 1rem; border-top: 1px solid rgba(255,255,255,0.08); text-align: center; font-size: 0.75rem; color: rgba(255,255,255,0.3); font-weight: 600;">
+                <span>v1.0.0</span>
             </div>`;
 
         // Assign role-specific theme class automatically to look professional
@@ -180,6 +176,11 @@ const App = (() => {
                             <div class="user-role">${roleLabels[currentRole]}</div>
                         </div>
                         <div class="user-avatar">${userName[0].toUpperCase()}</div>
+                        <div class="profile-dropdown">
+                            <button id="profile-logout-btn">
+                                ${icon('log-out', { size: 14 })} Logout
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -195,7 +196,14 @@ const App = (() => {
             });
         });
 
-        document.getElementById('btn-logout').addEventListener('click', logout);
+        const btnLogout = document.getElementById('btn-logout');
+        if (btnLogout) {
+            btnLogout.addEventListener('click', logout);
+        }
+        const profileLogout = document.getElementById('profile-logout-btn');
+        if (profileLogout) {
+            profileLogout.addEventListener('click', logout);
+        }
         document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar);
         applySidebarState();
         refreshNotifications();
