@@ -42,22 +42,22 @@ const ManagementModule = (() => {
 
             <div class="stats-grid">
                 <div class="stat-card gold">
-                    <div class="stat-icon">🏛️</div>
+                    <div class="stat-icon">${icon('building-2', { size: 24 })}</div>
                     <div class="stat-value">${depts.length}</div>
                     <div class="stat-label">Departments</div>
                 </div>
                 <div class="stat-card blue">
-                    <div class="stat-icon">👨‍🏫</div>
+                    <div class="stat-icon">${icon('graduation-cap', { size: 24 })}</div>
                     <div class="stat-value">${faculty.length}</div>
                     <div class="stat-label">Faculty</div>
                 </div>
                 <div class="stat-card purple">
-                    <div class="stat-icon">👥</div>
+                    <div class="stat-icon">${icon('users', { size: 24 })}</div>
                     <div class="stat-value">${students.length}</div>
                     <div class="stat-label">Students</div>
                 </div>
                 <div class="stat-card green">
-                    <div class="stat-icon">📚</div>
+                    <div class="stat-icon">${icon('book-open', { size: 24 })}</div>
                     <div class="stat-value">${subjects.length}</div>
                     <div class="stat-label">Subjects</div>
                 </div>
@@ -194,24 +194,24 @@ const ManagementModule = (() => {
                                     let actionsHTML = '';
 
                                     if (!entered) {
-                                        statusBadge = `<span class="badge" style="background:#cf2c31; color:white; font-weight:600; padding:5px 12px; border-radius:6px; font-size:0.78rem; display:inline-flex; align-items:center; gap:5px; white-space:nowrap;">⚠ Not Entered</span>`;
+                                        statusBadge = `<span class="badge" style="background:#cf2c31; color:white; font-weight:600; padding:5px 12px; border-radius:6px; font-size:0.78rem; display:inline-flex; align-items:center; gap:5px; white-space:nowrap;">${iconText('alert-triangle', 'Not Entered', { size: 14 })}</span>`;
                                         filterTag = 'pending';
                                         actionsHTML = `
                                             <div class="flex gap-sm" style="align-items:center; flex-wrap:nowrap;">
-                                                <span style="font-size:0.82rem; color:#64748B; font-weight:500; white-space:nowrap;">⏳ Waiting for Faculty</span>
-                                                <button class="btn-pro btn-pro-warning notify-btn" data-fid="${s.facultyId}" style="padding:5px 14px; font-size:0.78rem; border-radius:6px; white-space:nowrap;">🔔 Send Notification</button>
+                                                <span style="font-size:0.82rem; color:#64748B; font-weight:500; white-space:nowrap; display:inline-flex; align-items:center; gap:4px;">${iconText('clock', 'Waiting for Faculty', { size: 14 })}</span>
+                                                <button class="btn-pro btn-pro-warning notify-btn" data-fid="${s.facultyId}" style="padding:5px 14px; font-size:0.78rem; border-radius:6px; white-space:nowrap;">${iconText('bell', 'Send Notification', { size: 14 })}</button>
                                             </div>
                                         `;
                                     } else {
                                         let verStatus = '';
                                         if (vd && vd.verified) {
-                                            verStatus = '<span class="verify-badge verified">✓ Verified</span>';
+                                            verStatus = `<span class="verify-badge verified">${iconText('check', 'Verified', { size: 14 })}</span>`;
                                             filterTag = 'verified';
                                         } else if (vd && !vd.verified) {
-                                            verStatus = '<span class="verify-badge rejected">✗ Rejected</span>';
+                                            verStatus = `<span class="verify-badge rejected">${iconText('x', 'Rejected', { size: 14 })}</span>`;
                                             filterTag = 'rejected';
                                         } else {
-                                            verStatus = '<span class="verify-badge unverified">⏳ Pending</span>';
+                                            verStatus = `<span class="verify-badge unverified">${iconText('clock', 'Pending', { size: 14 })}</span>`;
                                             filterTag = 'pending';
                                         }
 
@@ -219,10 +219,10 @@ const ManagementModule = (() => {
                                         
                                         actionsHTML = `
                                             <div class="flex gap-sm">
-                                                <button class="btn btn-primary btn-xs view-marks" data-subject="${s.id}">📋 View</button>
-                                                <button class="btn btn-success btn-xs approve-btn" data-subject="${s.id}">✓ Approve</button>
-                                                <button class="btn btn-danger btn-xs reject-btn" data-subject="${s.id}">✗ Reject</button>
-                                                <button class="btn btn-warning btn-xs notify-btn" data-subject="${s.id}" data-fid="${s.facultyId}">🔔 Send Notification</button>
+                                                <button class="btn btn-primary btn-xs view-marks" data-subject="${s.id}">${iconText('clipboard-list', 'View', { size: 14 })}</button>
+                                                <button class="btn btn-success btn-xs approve-btn" data-subject="${s.id}">${iconText('check', 'Approve', { size: 14 })}</button>
+                                                <button class="btn btn-danger btn-xs reject-btn" data-subject="${s.id}">${iconText('x', 'Reject', { size: 14 })}</button>
+                                                <button class="btn btn-warning btn-xs notify-btn" data-subject="${s.id}" data-fid="${s.facultyId}">${iconText('bell', 'Send Notification', { size: 14 })}</button>
                                             </div>
                                         `;
                                     }
@@ -240,7 +240,7 @@ const ManagementModule = (() => {
                         </table>
                     </div>
                     ${subjects.filter(s => DataStore.areMarksEntered(s.id)).length === 0
-                        ? '<div class="empty-state"><div class="empty-icon">📭</div><p>No marks have been entered by any faculty yet.</p></div>'
+                        ? `<div class="empty-state"><div class="empty-icon">${icon('inbox', { size: 48 })}</div><p>No marks have been entered by any faculty yet.</p></div>`
                         : ''}
                 </div>
             </div>
@@ -306,9 +306,9 @@ const ManagementModule = (() => {
         const vd = DataStore.getVerificationDetails(subjectId);
 
         let statusLine = '';
-        if (vd && vd.verified) statusLine = '<span class="verify-badge verified">✓ Verified</span>';
-        else if (vd && !vd.verified) statusLine = `<span class="verify-badge rejected">✗ Rejected — ${vd.remarks || ''}</span>`;
-        else statusLine = '<span class="verify-badge unverified">⏳ Pending Verification</span>';
+        if (vd && vd.verified) statusLine = `<span class="verify-badge verified">${iconText('check', 'Verified', { size: 14 })}</span>`;
+        else if (vd && !vd.verified) statusLine = `<span class="verify-badge rejected">${iconText('x', `Rejected — ${vd.remarks || ''}`, { size: 14 })}</span>`;
+        else statusLine = `<span class="verify-badge unverified">${iconText('clock', 'Pending Verification', { size: 14 })}</span>`;
 
         const modal = document.getElementById('marks-view-modal');
         const marksTableHTML = MarksUtils.renderTable(subjectId, false);
@@ -326,13 +326,13 @@ const ManagementModule = (() => {
                 </div>
                 <div class="modal-body" style="max-height:70vh;overflow:auto;padding:0.5rem;">
                     <div style="background:rgba(255,190,11,0.06);border:1px solid rgba(255,190,11,0.12);border-radius:8px;padding:0.6rem 1rem;margin-bottom:0.8rem;font-size:0.8rem;color:var(--text-secondary);">
-                        🔒 <strong>View Only</strong> — Management cannot edit marks. Use Approve/Reject to verify.
+                        ${iconText('lock', 'View Only — Management cannot edit marks. Use Approve/Reject to verify.', { size: 16 })}
                     </div>
                     ${marksTableHTML}
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-danger" id="mv-reject">✗ Reject</button>
-                    <button class="btn btn-success" id="mv-approve">✓ Approve</button>
+                    <button class="btn btn-danger" id="mv-reject">${iconText('x', 'Reject', { size: 16 })}</button>
+                    <button class="btn btn-success" id="mv-approve">${iconText('check', 'Approve', { size: 16 })}</button>
                 </div>
             </div>
         </div>`;

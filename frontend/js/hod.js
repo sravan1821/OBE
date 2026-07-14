@@ -40,22 +40,22 @@ const HODModule = (() => {
 
             <div class="stats-grid">
                 <div class="stat-card green">
-                    <div class="stat-icon">🏛️</div>
+                    <div class="stat-icon">${icon('building-2', { size: 24 })}</div>
                     <div class="stat-value">${depts.length}</div>
                     <div class="stat-label">Departments</div>
                 </div>
                 <div class="stat-card blue">
-                    <div class="stat-icon">👨‍🏫</div>
+                    <div class="stat-icon">${icon('graduation-cap', { size: 24 })}</div>
                     <div class="stat-value">${faculty.length}</div>
                     <div class="stat-label">Faculty</div>
                 </div>
                 <div class="stat-card purple">
-                    <div class="stat-icon">📚</div>
+                    <div class="stat-icon">${icon('book-open', { size: 24 })}</div>
                     <div class="stat-value">${subjects.length}</div>
                     <div class="stat-label">Subjects</div>
                 </div>
                 <div class="stat-card gold">
-                    <div class="stat-icon">👥</div>
+                    <div class="stat-icon">${icon('users', { size: 24 })}</div>
                     <div class="stat-value">${students.length}</div>
                     <div class="stat-label">Students</div>
                 </div>
@@ -100,8 +100,8 @@ const HODModule = (() => {
                             </div>
                             <div style="margin-top:1rem">
                                 ${subjects.filter(s => !DataStore.areMarksEntered(s.id)).length > 0
-                                    ? `<p class="text-sm" style="color:var(--danger)">⚠️ ${subjects.filter(s => !DataStore.areMarksEntered(s.id)).length} subject(s) still pending mark entry</p>`
-                                    : '<p class="text-sm text-success">✅ All marks have been entered</p>'}
+                                    ? `<p class="text-sm icon-text" style="color:var(--danger)">${icon('alert-triangle', { size: 16 })}<span>${subjects.filter(s => !DataStore.areMarksEntered(s.id)).length} subject(s) still pending mark entry</span></p>`
+                                    : `<p class="text-sm text-success icon-text">${icon('check-circle', { size: 16 })}<span>All marks have been entered</span></p>`}
                             </div>
                         </div>
                     </div>
@@ -113,18 +113,18 @@ const HODModule = (() => {
                 <div class="card-header"><h3>Quick Actions</h3></div>
                 <div class="card-body">
                     <div class="flex gap-md" style="flex-wrap:wrap">
-                        <button class="btn btn-primary" onclick="HODModule.renderSection('faculty')">👨‍🏫 Manage Faculty</button>
-                        <button class="btn btn-success" onclick="HODModule.renderSection('departments')">🏛️ Manage Departments</button>
-                        <button class="btn btn-warning" onclick="HODModule.renderSection('subjects')">📚 Manage Subjects</button>
-                        <button class="btn btn-secondary" onclick="HODModule.renderSection('assignments')">🔗 Assignments</button>
-                        <button class="btn btn-danger btn-sm" id="hod-reset-btn">🔄 Reset All Data</button>
+                        <button class="btn btn-primary" onclick="HODModule.renderSection('faculty')">${iconText('graduation-cap', 'Manage Faculty')}</button>
+                        <button class="btn btn-success" onclick="HODModule.renderSection('departments')">${iconText('building-2', 'Manage Departments')}</button>
+                        <button class="btn btn-warning" onclick="HODModule.renderSection('subjects')">${iconText('book-open', 'Manage Subjects')}</button>
+                        <button class="btn btn-secondary" onclick="HODModule.renderSection('assignments')">${iconText('link', 'Assignments')}</button>
+                        <button class="btn btn-danger btn-sm" id="hod-reset-btn">${iconText('refresh-cw', 'Reset All Data')}</button>
                     </div>
                 </div>
             </div>
         </div>`;
 
         document.getElementById('hod-reset-btn').addEventListener('click', () => {
-            if (confirm('⚠️ This will reset ALL data to defaults. Continue?')) {
+            if (confirm('Warning: This will reset ALL data to defaults. Continue?')) {
                 DataStore.reset();
                 App.showToast('All data reset to defaults', 'info');
                 renderDashboard(c);
@@ -167,7 +167,7 @@ const HODModule = (() => {
                 <h1>Manage Faculty</h1>
                 <p>Create, view, and remove faculty members</p>
                 <div class="page-actions">
-                    <button class="btn btn-primary" id="add-faculty-btn">➕ Add Faculty</button>
+                    <button class="btn btn-primary" id="add-faculty-btn">${iconText('plus', 'Add Faculty')}</button>
                 </div>
             </div>
 
@@ -177,7 +177,7 @@ const HODModule = (() => {
                 </div>
                 <div class="card-body no-pad">
                     ${faculty.length === 0
-                        ? '<div class="empty-state"><div class="empty-icon">👨‍🏫</div><p>No faculty members yet.</p></div>'
+                        ? `<div class="empty-state"><div class="empty-icon">${icon('graduation-cap', { size: 48 })}</div><p>No faculty members yet.</p></div>`
                         : `<div class="table-wrapper"><table class="table">
                             <thead><tr><th>Name</th><th>Username</th><th>Email</th><th>Department</th><th>Subjects</th><th>Actions</th></tr></thead>
                             <tbody>
@@ -192,8 +192,8 @@ const HODModule = (() => {
                                         <td>${subs.length > 0 ? subs.map(s => `<span class="badge badge-info" style="margin:2px">${s.code}</span>`).join('') : '<span class="text-muted">None</span>'}</td>
                                         <td>
                                             <div class="flex gap-sm">
-                                                <button class="btn btn-primary btn-xs edit-faculty" data-id="${f.id}" style="padding:4px 10px; font-size:0.8rem; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">✏️ Edit</button>
-                                                <button class="btn btn-danger btn-xs del-faculty" data-id="${f.id}" data-name="${f.name}" style="padding:4px 10px; font-size:0.8rem; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">🗑️ Delete</button>
+                                                <button class="btn btn-primary btn-xs edit-faculty" data-id="${f.id}" style="padding:4px 10px; font-size:0.8rem; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">${iconText('pencil', 'Edit', { size: 14 })}</button>
+                                                <button class="btn btn-danger btn-xs del-faculty" data-id="${f.id}" data-name="${f.name}" style="padding:4px 10px; font-size:0.8rem; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">${iconText('trash-2', 'Delete', { size: 14 })}</button>
                                             </div>
                                         </td>
                                     </tr>`;
@@ -404,7 +404,7 @@ const HODModule = (() => {
                 <div class="card-body">
                     <div class="flex gap-sm" style="max-width:500px">
                         <input type="text" class="form-input" id="new-dept-name" placeholder="e.g., Information Technology">
-                        <button class="btn btn-primary" id="add-dept-btn" style="white-space:nowrap">➕ Add</button>
+                        <button class="btn btn-primary" id="add-dept-btn" style="white-space:nowrap">${iconText('plus', 'Add')}</button>
                     </div>
                     <div id="dept-error" class="error-message mt-1" style="display:none;max-width:500px"></div>
                 </div>
@@ -415,7 +415,7 @@ const HODModule = (() => {
                 <div class="card-header"><h2>All Departments (${depts.length})</h2></div>
                 <div class="card-body no-pad">
                     ${depts.length === 0
-                        ? '<div class="empty-state"><div class="empty-icon">🏛️</div><p>No departments created yet.</p></div>'
+                        ? `<div class="empty-state"><div class="empty-icon">${icon('building-2', { size: 48 })}</div><p>No departments created yet.</p></div>`
                         : `<div class="table-wrapper"><table class="table">
                             <thead><tr><th>Department Name</th><th>Faculty</th><th>Subjects</th><th>Students</th><th>Actions</th></tr></thead>
                             <tbody>
@@ -430,8 +430,8 @@ const HODModule = (() => {
                                         <td><span class="badge badge-info">${stCount}</span></td>
                                         <td>
                                             <div class="flex gap-sm">
-                                                <button class="btn btn-primary btn-xs edit-dept" data-id="${d.id}" data-name="${d.name}" style="padding:4px 10px; font-size:0.8rem; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">✏️ Edit</button>
-                                                <button class="btn btn-danger btn-xs del-dept" data-id="${d.id}" data-name="${d.name}" style="padding:4px 10px; font-size:0.8rem; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">🗑️ Delete</button>
+                                                <button class="btn btn-primary btn-xs edit-dept" data-id="${d.id}" data-name="${d.name}" style="padding:4px 10px; font-size:0.8rem; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">${iconText('pencil', 'Edit', { size: 14 })}</button>
+                                                <button class="btn btn-danger btn-xs del-dept" data-id="${d.id}" data-name="${d.name}" style="padding:4px 10px; font-size:0.8rem; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">${iconText('trash-2', 'Delete', { size: 14 })}</button>
                                             </div>
                                         </td>
                                     </tr>`;
@@ -494,7 +494,7 @@ const HODModule = (() => {
                 <h1>Manage Subjects</h1>
                 <p>Create and manage academic subjects across departments</p>
                 <div class="page-actions">
-                    <button class="btn btn-primary" id="add-subject-btn">➕ Add Subject</button>
+                    <button class="btn btn-primary" id="add-subject-btn">${iconText('plus', 'Add Subject')}</button>
                 </div>
             </div>
 
@@ -509,7 +509,7 @@ const HODModule = (() => {
                 </div>
                 <div class="card-body no-pad">
                     ${subjects.length === 0
-                        ? '<div class="empty-state"><div class="empty-icon">📚</div><p>No subjects created yet.</p></div>'
+                        ? `<div class="empty-state"><div class="empty-icon">${icon('book-open', { size: 48 })}</div><p>No subjects created yet.</p></div>`
                         : `<div class="table-wrapper"><table class="table">
                             <thead><tr><th>Code</th><th>Subject</th><th>Department</th><th>Semester</th><th>Credits</th><th>Faculty</th><th>Actions</th></tr></thead>
                             <tbody id="subjects-tbody">
@@ -525,8 +525,8 @@ const HODModule = (() => {
                                         <td>${fac ? fac.name : '<span class="text-muted">Unassigned</span>'}</td>
                                         <td>
                                             <div class="flex gap-sm">
-                                                <button class="btn btn-primary btn-xs edit-subject" data-id="${s.id}" style="padding:4px 10px; font-size:0.8rem; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">✏️ Edit</button>
-                                                <button class="btn btn-danger btn-xs del-subject" data-id="${s.id}" data-name="${s.name}" style="padding:4px 10px; font-size:0.8rem; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">🗑️ Delete</button>
+                                                <button class="btn btn-primary btn-xs edit-subject" data-id="${s.id}" style="padding:4px 10px; font-size:0.8rem; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">${iconText('pencil', 'Edit', { size: 14 })}</button>
+                                                <button class="btn btn-danger btn-xs del-subject" data-id="${s.id}" data-name="${s.name}" style="padding:4px 10px; font-size:0.8rem; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">${iconText('trash-2', 'Delete', { size: 14 })}</button>
                                             </div>
                                         </td>
                                     </tr>`;
@@ -744,7 +744,7 @@ const HODModule = (() => {
                 </div>
                 <div class="card-body no-pad">
                     ${subjects.length === 0
-                        ? '<div class="empty-state"><div class="empty-icon">🔗</div><p>No subjects available. Create subjects first.</p></div>'
+                        ? `<div class="empty-state"><div class="empty-icon">${icon('link', { size: 48 })}</div><p>No subjects available. Create subjects first.</p></div>`
                         : `<div class="table-wrapper"><table class="table">
                             <thead><tr><th>Code</th><th>Subject</th><th>Department</th><th>Semester</th><th>Assigned Faculty</th><th>Action</th></tr></thead>
                             <tbody id="assign-tbody">
@@ -770,7 +770,7 @@ const HODModule = (() => {
                                             </select>
                                         </td>
                                         <td>
-                                            <button class="btn-pro btn-pro-success save-assign" data-subject="${s.id}" style="padding: 7px 16px; font-size: 0.82rem; border-radius: 8px; font-weight: 600;">✓ Save</button>
+                                            <button class="btn-pro btn-pro-success save-assign" data-subject="${s.id}" style="padding: 7px 16px; font-size: 0.82rem; border-radius: 8px; font-weight: 600;">${iconText('check', 'Save', { size: 14 })}</button>
                                         </td>
                                     </tr>`;
                                 }).join('')}
@@ -799,7 +799,7 @@ const HODModule = (() => {
                                         <td>
                                             ${subs.length === 0 ? '<span class="text-muted">N/A</span>'
                                               : allEntered
-                                                ? '<span class="badge badge-success">✓ All entered</span>'
+                                                ? `<span class="badge badge-success">${iconText('check', 'All entered', { size: 14 })}</span>`
                                                 : `<span class="badge badge-danger">${subs.filter(s => !DataStore.areMarksEntered(s.id)).length} pending</span>`}
                                         </td>
                                     </tr>`;

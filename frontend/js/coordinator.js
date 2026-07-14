@@ -40,22 +40,22 @@ const CoordinatorModule = (() => {
 
             <div class="stats-grid">
                 <div class="stat-card purple">
-                    <div class="stat-icon">📚</div>
+                    <div class="stat-icon">${icon('book-open', { size: 24 })}</div>
                     <div class="stat-value">${subjects.length}</div>
                     <div class="stat-label">Total Subjects</div>
                 </div>
                 <div class="stat-card blue">
-                    <div class="stat-icon">👨‍🏫</div>
+                    <div class="stat-icon">${icon('graduation-cap', { size: 24 })}</div>
                     <div class="stat-value">${faculty.length}</div>
                     <div class="stat-label">Faculty Members</div>
                 </div>
                 <div class="stat-card green">
-                    <div class="stat-icon">✅</div>
+                    <div class="stat-icon">${icon('check-circle', { size: 24 })}</div>
                     <div class="stat-value">${entered}</div>
                     <div class="stat-label">Marks Entered</div>
                 </div>
                 <div class="stat-card gold">
-                    <div class="stat-icon">⚠️</div>
+                    <div class="stat-icon">${icon('alert-triangle', { size: 24 })}</div>
                     <div class="stat-value">${notEntered}</div>
                     <div class="stat-label">Marks Pending</div>
                 </div>
@@ -166,8 +166,8 @@ const CoordinatorModule = (() => {
                 <h1>Assign Timetable</h1>
                 <p>Map faculty and subjects to weekly time slots</p>
                 <div class="page-actions">
-                    <button class="btn btn-primary" id="tt-add-btn">➕ Add Entry</button>
-                    <button class="btn btn-danger btn-sm" id="tt-clear-btn">🗑️ Clear All</button>
+                    <button class="btn btn-primary" id="tt-add-btn">${iconText('plus', 'Add Entry')}</button>
+                    <button class="btn btn-danger btn-sm" id="tt-clear-btn">${iconText('trash-2', 'Clear All')}</button>
                 </div>
             </div>
 
@@ -204,7 +204,7 @@ const CoordinatorModule = (() => {
                 <div class="card-header"><h2>All Entries</h2></div>
                 <div class="card-body no-pad">
                     ${tt.length === 0
-                        ? '<div class="empty-state"><div class="empty-icon">📅</div><p>No timetable entries yet. Click "Add Entry" to start.</p></div>'
+                        ? `<div class="empty-state"><div class="empty-icon">${icon('calendar', { size: 48 })}</div><p>No timetable entries yet. Click "Add Entry" to start.</p></div>`
                         : `<div class="table-wrapper"><table class="table">
                             <thead><tr><th>Day</th><th>Period</th><th>Subject</th><th>Faculty</th><th>Action</th></tr></thead>
                             <tbody>${tt.map(e => {
@@ -217,8 +217,8 @@ const CoordinatorModule = (() => {
                                     <td>${fac ? fac.name : '—'}</td>
                                     <td>
                                         <div class="flex gap-xs">
-                                            <button class="btn btn-primary btn-xs tt-edit" data-id="${e.id}" style="padding: 4px 8px; font-size: 0.75rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">📝 Edit</button>
-                                            <button class="btn btn-danger btn-xs tt-del" data-id="${e.id}" style="padding: 4px 8px; font-size: 0.75rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">✕ Delete</button>
+                                            <button class="btn btn-primary btn-xs tt-edit" data-id="${e.id}" style="padding: 4px 8px; font-size: 0.75rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">${iconText('pencil', 'Edit', { size: 14 })}</button>
+                                            <button class="btn btn-danger btn-xs tt-del" data-id="${e.id}" style="padding: 4px 8px; font-size: 0.75rem; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">${iconText('x', 'Delete', { size: 14 })}</button>
                                         </div>
                                     </td>
                                 </tr>`;
@@ -417,8 +417,8 @@ const CoordinatorModule = (() => {
                                         <td>
                                             <span class="status-dot ${entered?'green':'red'}"></span>
                                             ${entered
-                                                ? '<span class="badge badge-success">✓ Entered</span>'
-                                                : '<span class="badge badge-danger">✗ Pending</span>'}
+                                                ? `<span class="badge badge-success">${iconText('check', 'Entered', { size: 14 })}</span>`
+                                                : `<span class="badge badge-danger">${iconText('x', 'Pending', { size: 14 })}</span>`}
                                         <td>
                                             <div style="display:flex; flex-direction:column; gap:5px;">
                                                 ${!entered && s.facultyId ? `<button class="btn btn-danger btn-xs btn-notify" data-fid="${s.facultyId}" data-msg="Mid marks for ${s.name} are pending. Please enter them immediately.">Send Notification (Marks)</button>` : ''}
