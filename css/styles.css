@@ -213,6 +213,8 @@ input, select { font-family: inherit; }
 .btn-pro-primary { background: linear-gradient(135deg, var(--accent), #1a82c4); color: white; }
 .btn-pro-success { background: linear-gradient(135deg, var(--success), #0a995e); color: white; }
 .btn-pro-warning { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; text-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+.btn-pro-secondary { background: #ffffff; border: 1px solid var(--border-color); color: var(--text-main); }
+.btn-pro-secondary:hover { background: var(--bg-main); border-color: rgba(0,0,0,0.25); color: var(--primary); }
 
 /* ==================== DASHBOARD LAYOUT ==================== */
 #dashboard-page { display: flex; height: 100vh; overflow: hidden; }
@@ -789,22 +791,31 @@ body.theme-orange .tt-cell.tt-filled {
 /* Toggle menu options */
 .menu-options-container {
     display: flex;
-    gap: 8px;
+    gap: 16px;
     border-bottom: 2px solid var(--border-color);
-    padding-bottom: 10px;
+    padding-bottom: 12px;
     margin-bottom: 15px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE 10+ */
+}
+.menu-options-container::-webkit-scrollbar {
+    display: none; /* Safari and Chrome */
 }
 .menu-option-btn {
     padding: 8px 16px;
     background: none;
     border: none;
     border-bottom: 2px solid transparent;
-    margin-bottom: -12px;
+    margin-bottom: -14px;
     font-weight: 700;
     font-size: 0.9rem;
     color: var(--text-muted);
     cursor: pointer;
     transition: all 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 .menu-option-btn:hover {
     color: var(--primary);
@@ -812,6 +823,12 @@ body.theme-orange .tt-cell.tt-filled {
 .menu-option-btn.active {
     color: var(--primary);
     border-bottom-color: var(--primary);
+}
+
+.syllabus-unit-row:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02) !important;
+    border-color: rgba(0, 0, 0, 0.15) !important;
 }
 
 .nested-panel {
