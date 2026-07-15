@@ -1234,26 +1234,30 @@ const FacultyModule = (() => {
                 <!-- 1. Articulatior Matrix -->
                 <div class="print-section-header">1. Course Articulation Matrix (CO-PO Mapping)</div>
                 <div class="table-wrapper" style="margin-bottom: 2rem;">
-                    <table class="table text-center" style="font-size: 0.8rem; white-space: nowrap;">
+                    <table style="width: 100%; border-collapse: collapse; border: 1px solid var(--border-color); font-family: var(--font-sans); text-align: center; font-size: 0.8rem; white-space: nowrap;">
                         <thead>
-                            <tr style="background: var(--bg-light);">
-                                <th style="text-align: left;">Course Outcome</th>
-                                ${Array.from({length: 12}, (_, i) => `<th>PO${i+1}</th>`).join('')}
-                                <th>PSO1</th><th>PSO2</th>
+                            <tr style="background: var(--primary); color: #fff; font-family: var(--font-heading); font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                                <th style="padding: 10px; border: 1px solid rgba(255,255,255,0.15); text-align: center; width: 12%;">Course Outcome</th>
+                                ${Array.from({length: 12}, (_, i) => `<th style="padding: 10px; border: 1px solid rgba(255,255,255,0.15); text-align: center;">PO${i+1}</th>`).join('')}
+                                <th style="padding: 10px; border: 1px solid rgba(255,255,255,0.15); text-align: center;">PSO1</th>
+                                <th style="padding: 10px; border: 1px solid rgba(255,255,255,0.15); text-align: center;">PSO2</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${['CO1', 'CO2', 'CO3', 'CO4', 'CO5'].map(co => `
-                                <tr>
-                                    <td style="text-align: left; font-weight: 700; color: var(--text-dark);">${co}</td>
+                            ${['CO1', 'CO2', 'CO3', 'CO4', 'CO5'].map((co, idx) => {
+                                const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+                                return `
+                                <tr style="background: ${rowBg};">
+                                    <td style="padding: 10px; border: 1px solid var(--border-color); text-align: center; font-weight: 700; color: var(--text-main); font-family: var(--font-heading);">${co}</td>
                                     ${Array.from({length: 12}, (_, i) => {
-                                        const val = poData[`PO${i+1}`].mapping[['CO1','CO2','CO3','CO4','CO5'].indexOf(co)];
+                                        const val = poData[`PO${i+1}`].mapping[idx];
                                         return renderMappingCell(val);
                                     }).join('')}
-                                    ${renderMappingCell(poData['PSO1'].mapping[['CO1','CO2','CO3','CO4','CO5'].indexOf(co)])}
-                                    ${renderMappingCell(poData['PSO2'].mapping[['CO1','CO2','CO3','CO4','CO5'].indexOf(co)])}
+                                    ${renderMappingCell(poData['PSO1'].mapping[idx])}
+                                    ${renderMappingCell(poData['PSO2'].mapping[idx])}
                                 </tr>
-                            `).join('')}
+                                `;
+                            }).join('')}
                         </tbody>
                     </table>
                 </div>
