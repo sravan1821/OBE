@@ -312,21 +312,48 @@ const FacultyModule = (() => {
                     <p>Select any subject card to view evaluation milestones, syllabus tracking, or direct/indirect outcome mapping.</p>
                 </div>
 
-                <div class="grid grid-3" id="assigned-subjects-grid">
+                <div class="subject-cards-grid" id="assigned-subjects-grid">
                     ${subjects.map(s => {
+                        const dept = DataStore.getDepartmentById(s.departmentId);
+                        const hasMarks = DataStore.areMarksEntered(s.id);
                         return `
-                        <div class="card subject-card subject-card-clickable subject-select-card" data-sid="${s.id}" style="border-radius: 12px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); overflow: hidden; background: var(--bg-card); transition: all 0.3s ease; padding: 1.5rem; text-align: center; cursor: pointer;">
-                            <h3 style="margin: 0 auto 8px auto; font-size: 1.3rem; font-weight: 700; color: var(--text-dark);">
-                                ${s.name}(${s.code})
-                            </h3>
-                            <div style="font-size: 0.85rem; font-weight: 600; color: var(--accent); margin-bottom: 12px;">Regulation: MIC-23</div>
-                            <div style="font-size: 0.82rem; color: var(--text-muted);">
-                                Academic Year: 2025-2026 &bull; Semester ${getRomanSemester(s.semester)}
+                        <div class="premium-subject-card subject-select-card" data-sid="${s.id}">
+                            <div class="psc-body">
+                                <div class="psc-top-row">
+                                    <div class="psc-icon-circle">
+                                        ${icon('book-open', { size: 22 })}
+                                    </div>
+                                    <div class="psc-title-area">
+                                        <h3 class="psc-title">${s.name}</h3>
+                                        <span class="psc-code">${s.code}</span>
+                                    </div>
+                                </div>
+                                <div class="psc-meta">
+                                    <div class="psc-meta-item">
+                                        <span class="psc-meta-icon">${icon('graduation-cap', { size: 15 })}</span>
+                                        <span>Regulation: MIC-23</span>
+                                    </div>
+                                    <div class="psc-meta-item">
+                                        <span class="psc-meta-icon">${icon('calendar', { size: 15 })}</span>
+                                        <span>Academic Year: 2025-2026 &bull; Semester ${getRomanSemester(s.semester)}</span>
+                                    </div>
+                                    <div class="psc-meta-item">
+                                        <span class="psc-meta-icon">${icon('building', { size: 15 })}</span>
+                                        <span>${dept ? dept.name : 'Department'} &bull; ${s.credits || 3} Credits</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div style="margin-top: 15px;">
-                                <button class="btn btn-outline btn-xs" style="font-weight: 600; padding: 6px 14px; border-radius: 6px;">
-                                    View Details &rarr;
-                                </button>
+                            <div class="psc-footer">
+                                <div class="psc-status">
+                                    <span class="psc-status-dot ${hasMarks ? '' : 'inactive'}"></span>
+                                    <span style="color: ${hasMarks ? 'var(--success)' : 'var(--text-muted)'}">
+                                        ${hasMarks ? 'Marks Entered' : 'Pending Entry'}
+                                    </span>
+                                </div>
+                                <div class="psc-view-link">
+                                    <span>View Details</span>
+                                    <span class="psc-arrow">&rarr;</span>
+                                </div>
                             </div>
                         </div>`;
                     }).join('')}

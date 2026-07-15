@@ -159,7 +159,7 @@ const App = (() => {
             <div class="topbar">
                 <div class="topbar-left">
                     <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Collapse sidebar" title="Collapse sidebar">
-                        ${icon('panel-left-close', { size: 18 })}
+                        ${icon('menu', { size: 20 })}
                     </button>
                     <div class="topbar-title">Dashboard Overview</div>
                 </div>
@@ -221,8 +221,8 @@ const App = (() => {
         const collapsed = isSidebarCollapsed();
         page.classList.toggle('sidebar-collapsed', collapsed);
         toggleBtn.innerHTML = collapsed
-            ? icon('panel-left-open', { size: 18 })
-            : icon('panel-left-close', { size: 18 });
+            ? icon('chevrons-right', { size: 20 })
+            : icon('menu', { size: 20 });
         toggleBtn.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
         toggleBtn.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
     }
