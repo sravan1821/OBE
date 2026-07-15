@@ -1064,83 +1064,89 @@ const FacultyModule = (() => {
             <div class="nested-panel" style="text-align: left;">
                 <!-- Table 1 -->
                 <h4 style="margin: 0 0 0.8rem 0; font-size: 1.05rem; color: var(--text-dark); font-weight: 700;">1. COs Attainment through Direct Assessment(A):</h4>
-                <div class="table-wrapper" style="margin-bottom: 2rem;">
-                    <table class="table text-center" style="font-size: 0.88rem;">
+                <div class="table-wrapper" style="margin-bottom: 2rem; padding: 5px;">
+                    <table style="width: 100%; border-collapse: collapse; border: 1px solid var(--border-color); font-family: var(--font-sans); text-align: center; font-size: 0.88rem; border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-sm);">
                         <thead>
-                            <tr style="background: var(--bg-light);">
-                                <th style="text-align: left;">Course Outcomes</th>
-                                <th>Internal Exam (x1)</th>
-                                <th>End Exam (x3)</th>
-                                <th style="color: var(--primary);">Attainment (A) [0.3(x1)+0.7(x3)]</th>
-                                <th>Target (3-Scale)</th>
+                            <tr style="background: var(--primary); color: #fff; font-family: var(--font-heading); font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                                <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.15); text-align: left; width: 20%;">Course Outcomes</th>
+                                <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.15); width: 20%;">Internal Exam (x1)</th>
+                                <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.15); width: 20%;">End Exam (x3)</th>
+                                <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.15); background: var(--primary-light); width: 25%;">Attainment (A)<br/><span style="font-size:0.75rem;text-transform:none;opacity:0.9;">[0.3(x1) + 0.7(x3)]</span></th>
+                                <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.15); background: rgba(16, 185, 129, 0.2); color: #10B981; width: 15%; vertical-align: middle;">Target (3-Scale)</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${['CO1', 'CO2', 'CO3', 'CO4', 'CO5'].map(co => {
+                            ${['CO1', 'CO2', 'CO3', 'CO4', 'CO5'].map((co, idx) => {
                                 const row = directData[co];
+                                const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
                                 return `
-                                <tr>
-                                    <td style="text-align: left; font-weight: 700; color: var(--text-dark);">${co}</td>
-                                    <td>${row.internal3Scale.toFixed(2)}</td>
-                                    <td>${row.external3Scale.toFixed(2)}</td>
-                                    <td style="font-weight: 700; color: var(--primary);">${row.direct3Scale.toFixed(2)}</td>
-                                    <td style="font-weight: 500; color: var(--text-muted);">${row.target3Scale.toFixed(2)}</td>
+                                <tr style="background: ${rowBg}; transition: background 0.15s ease;">
+                                    <td style="padding: 12px; border: 1px solid var(--border-color); text-align: left; font-weight: 700; color: var(--text-main); font-family: var(--font-heading);">${co}</td>
+                                    <td style="padding: 12px; border: 1px solid var(--border-color);">${row.internal3Scale.toFixed(2)}</td>
+                                    <td style="padding: 12px; border: 1px solid var(--border-color);">${row.external3Scale.toFixed(2)}</td>
+                                    <td style="padding: 12px; border: 1px solid var(--border-color); font-weight: 700; color: var(--accent); background: rgba(14, 165, 233, 0.04);">${row.direct3Scale.toFixed(2)}</td>
+                                    <td style="padding: 12px; border: 1px solid var(--border-color); font-weight: 700; color: #10B981; background: rgba(16, 185, 129, 0.03);">${row.target3Scale.toFixed(2)}</td>
                                 </tr>
                                 `;
                             }).join('')}
                         </tbody>
                     </table>
                 </div>
-
+ 
                 <!-- Table 2 -->
                 <h4 style="margin: 0 0 0.8rem 0; font-size: 1.05rem; color: var(--text-dark); font-weight: 700;">2. COs Attainment through Indirect Assessment: Course End Survey(B)</h4>
-                <div class="table-wrapper" style="margin-bottom: 2rem;">
-                    <table class="table text-center" style="font-size: 0.88rem;">
+                <div class="table-wrapper" style="margin-bottom: 2rem; padding: 5px;">
+                    <table style="width: 100%; border-collapse: collapse; border: 1px solid var(--border-color); font-family: var(--font-sans); text-align: center; font-size: 0.88rem; border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-sm);">
                         <thead>
-                            <tr style="background: var(--bg-light);">
-                                <th rowspan="2" style="text-align: left; vertical-align: middle;">Course outcomes</th>
-                                <th colspan="5" style="border-bottom: 2px solid var(--border-color);">Course end survey points</th>
-                                <th rowspan="2" style="vertical-align: middle; color: var(--primary);">Weighted Average (3-scale)</th>
+                            <tr style="background: var(--primary); color: #fff; font-family: var(--font-heading); font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                                <th rowspan="2" style="padding: 12px; border: 1px solid rgba(255,255,255,0.15); text-align: left; vertical-align: middle; width: 20%;">Course Outcomes</th>
+                                <th colspan="5" style="padding: 12px; border: 1px solid rgba(255,255,255,0.15); text-align: center;">Course End Survey Points Count</th>
+                                <th rowspan="2" style="padding: 12px; border: 1px solid rgba(255,255,255,0.15); background: var(--primary-light); vertical-align: middle; width: 30%;">Weighted Average<br/><span style="font-size:0.75rem;text-transform:none;opacity:0.9;">(3-scale)</span></th>
                             </tr>
-                            <tr>
-                                <th>5</th><th>4</th><th>3</th><th>2</th><th>1</th>
+                            <tr style="background: #f1f5f9; color: #475569; font-size: 0.76rem; font-weight: 700; text-transform: uppercase;">
+                                <th style="padding: 10px; border: 1px solid var(--border-color); width: 10%;">5 (Excellent)</th>
+                                <th style="padding: 10px; border: 1px solid var(--border-color); width: 10%;">4 (Good)</th>
+                                <th style="padding: 10px; border: 1px solid var(--border-color); width: 10%;">3 (Average)</th>
+                                <th style="padding: 10px; border: 1px solid var(--border-color); width: 10%;">2 (Below Avg)</th>
+                                <th style="padding: 10px; border: 1px solid var(--border-color); width: 10%;">1 (Poor)</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${['CO1', 'CO2', 'CO3', 'CO4', 'CO5'].map(co => {
+                            ${['CO1', 'CO2', 'CO3', 'CO4', 'CO5'].map((co, idx) => {
                                 const counts = indirectSummary[co];
                                 const avg = indirectAverages[co];
+                                const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
                                 return `
-                                <tr>
-                                    <td style="text-align: left; font-weight: 700; color: var(--text-dark);">${co}</td>
-                                    <td style="font-weight: 700;">${counts[5]}</td>
-                                    <td style="font-weight: 700;">${counts[4]}</td>
-                                    <td>${counts[3]}</td>
-                                    <td>${counts[2]}</td>
-                                    <td>${counts[1]}</td>
-                                    <td style="font-weight: 700; color: var(--primary);">${avg.toFixed(2)}</td>
+                                <tr style="background: ${rowBg}; transition: background 0.15s ease;">
+                                    <td style="padding: 12px; border: 1px solid var(--border-color); text-align: left; font-weight: 700; color: var(--text-main); font-family: var(--font-heading);">${co}</td>
+                                    <td style="padding: 12px; border: 1px solid var(--border-color); font-weight: 600;">${counts[5]}</td>
+                                    <td style="padding: 12px; border: 1px solid var(--border-color); font-weight: 600;">${counts[4]}</td>
+                                    <td style="padding: 12px; border: 1px solid var(--border-color); color: var(--text-muted);">${counts[3]}</td>
+                                    <td style="padding: 12px; border: 1px solid var(--border-color); color: var(--text-muted);">${counts[2]}</td>
+                                    <td style="padding: 12px; border: 1px solid var(--border-color); color: var(--text-muted);">${counts[1]}</td>
+                                    <td style="padding: 12px; border: 1px solid var(--border-color); font-weight: 700; color: var(--accent); background: rgba(14, 165, 233, 0.04);">${avg.toFixed(2)}</td>
                                 </tr>
                                 `;
                             }).join('')}
                         </tbody>
                     </table>
                 </div>
-
+ 
                 <!-- Table 3 -->
                 <h4 style="margin: 0 0 0.8rem 0; font-size: 1.05rem; color: var(--text-dark); font-weight: 700;">3. Final Attainment of COs:</h4>
-                <div class="table-wrapper" style="margin-bottom: 2rem;">
-                    <table class="table text-center" style="font-size: 0.88rem;">
+                <div class="table-wrapper" style="margin-bottom: 2rem; padding: 5px;">
+                    <table style="width: 100%; border-collapse: collapse; border: 1px solid var(--border-color); font-family: var(--font-sans); text-align: center; font-size: 0.88rem; border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-sm);">
                         <thead>
-                            <tr style="background: var(--bg-light);">
-                                <th style="text-align: left;">Course Outcomes</th>
-                                <th>Direct Assessment (A)</th>
-                                <th>Indirect Assessment (B)</th>
-                                <th style="color: var(--success);">Final Attainment [0.6(A)+0.4(B)]</th>
-                                <th>Target (3-Scale)</th>
+                            <tr style="background: var(--primary); color: #fff; font-family: var(--font-heading); font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                                <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.15); text-align: left; width: 20%;">Course Outcomes</th>
+                                <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.15); width: 20%;">Direct Assessment (A)</th>
+                                <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.15); width: 20%;">Indirect Assessment (B)</th>
+                                <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.15); background: var(--primary-light); width: 25%;">Final Attainment<br/><span style="font-size:0.75rem;text-transform:none;opacity:0.9;">[0.6(A) + 0.4(B)]</span></th>
+                                <th style="padding: 12px; border: 1px solid rgba(255,255,255,0.15); background: rgba(16, 185, 129, 0.2); color: #10B981; width: 15%; vertical-align: middle;">Target (3-Scale)</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${['CO1', 'CO2', 'CO3', 'CO4', 'CO5'].map(co => {
+                            ${['CO1', 'CO2', 'CO3', 'CO4', 'CO5'].map((co, idx) => {
                                 const A = directData[co].direct3Scale;
                                 const B = indirectAverages[co];
                                 const target = directData[co].target3Scale;
@@ -1150,14 +1156,14 @@ const FacultyModule = (() => {
                                     const exactFinals = { CO1: 1.76, CO2: 2.35, CO3: 1.84, CO4: 1.99, CO5: 1.76 };
                                     finalVal = exactFinals[co];
                                 }
-                                
+                                const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
                                 return `
-                                <tr>
-                                    <td style="text-align: left; font-weight: 700; color: var(--text-dark);">${co}</td>
-                                    <td>${A.toFixed(2)}</td>
-                                    <td>${B.toFixed(2)}</td>
-                                    <td style="font-weight: 700; color: var(--success);">${finalVal.toFixed(2)}</td>
-                                    <td style="font-weight: 500; color: var(--text-muted);">${target.toFixed(2)}</td>
+                                <tr style="background: ${rowBg}; transition: background 0.15s ease;">
+                                    <td style="padding: 12px; border: 1px solid var(--border-color); text-align: left; font-weight: 700; color: var(--text-main); font-family: var(--font-heading);">${co}</td>
+                                    <td style="padding: 12px; border: 1px solid var(--border-color);">${A.toFixed(2)}</td>
+                                    <td style="padding: 12px; border: 1px solid var(--border-color);">${B.toFixed(2)}</td>
+                                    <td style="padding: 12px; border: 1px solid var(--border-color); font-weight: 700; color: var(--success); background: rgba(16, 185, 129, 0.05);">${finalVal.toFixed(2)}</td>
+                                    <td style="padding: 12px; border: 1px solid var(--border-color); font-weight: 700; color: #10B981; background: rgba(16, 185, 129, 0.03);">${target.toFixed(2)}</td>
                                 </tr>
                                 `;
                             }).join('')}
@@ -1297,18 +1303,18 @@ const FacultyModule = (() => {
                 <!-- 3. Overall CO Attainment -->
                 <div class="print-section-header">3. Overall CO Attainment (60% Direct + 40% Indirect)</div>
                 <div class="table-wrapper" style="margin-bottom: 2rem;">
-                    <table class="table text-center" style="font-size: 0.82rem;">
+                    <table style="width: 100%; border-collapse: collapse; border: 1px solid var(--border-color); font-family: var(--font-sans); text-align: center; font-size: 0.8rem;">
                         <thead>
-                            <tr style="background: var(--bg-light);">
-                                <th style="text-align: left;">Course Outcomes</th>
-                                <th>Direct Assessment (A)</th>
-                                <th>Indirect Assessment: Survey (B)</th>
-                                <th style="font-weight:700;">Final Attainment [0.6(A)+0.4(B)]</th>
-                                <th>Target (3-Scale)</th>
+                            <tr style="background: var(--primary); color: #fff; font-family: var(--font-heading); font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+                                <th style="padding: 10px; border: 1px solid rgba(255,255,255,0.15); text-align: left; width: 20%;">Course Outcomes</th>
+                                <th style="padding: 10px; border: 1px solid rgba(255,255,255,0.15); width: 20%;">Direct Assessment (A)</th>
+                                <th style="padding: 10px; border: 1px solid rgba(255,255,255,0.15); width: 20%;">Indirect Assessment (B)</th>
+                                <th style="padding: 10px; border: 1px solid rgba(255,255,255,0.15); background: var(--primary-light); width: 25%;">Final Attainment<br/><span style="font-size:0.7rem;text-transform:none;opacity:0.9;">[0.6(A) + 0.4(B)]</span></th>
+                                <th style="padding: 10px; border: 1px solid rgba(255,255,255,0.15); background: rgba(16, 185, 129, 0.2); color: #10B981; width: 15%; vertical-align: middle;">Target (3-Scale)</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${['CO1', 'CO2', 'CO3', 'CO4', 'CO5'].map(co => {
+                            ${['CO1', 'CO2', 'CO3', 'CO4', 'CO5'].map((co, idx) => {
                                 const A = directData[co].direct3Scale;
                                 const B = indirectAverages[co];
                                 const target = directData[co].target3Scale;
@@ -1318,14 +1324,14 @@ const FacultyModule = (() => {
                                     const exactFinals = { CO1: 1.76, CO2: 2.35, CO3: 1.84, CO4: 1.99, CO5: 1.76 };
                                     finalVal = exactFinals[co];
                                 }
-                                
+                                const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
                                 return `
-                                <tr>
-                                    <td style="text-align: left; font-weight: 700;">${co}</td>
-                                    <td>${A.toFixed(2)}</td>
-                                    <td>${B.toFixed(2)}</td>
-                                    <td style="font-weight: 700; color: var(--success);">${finalVal.toFixed(2)}</td>
-                                    <td>${target.toFixed(2)}</td>
+                                <tr style="background: ${rowBg};">
+                                    <td style="padding: 10px; border: 1px solid var(--border-color); text-align: left; font-weight: 700; color: var(--text-main); font-family: var(--font-heading);">${co}</td>
+                                    <td style="padding: 10px; border: 1px solid var(--border-color);">${A.toFixed(2)}</td>
+                                    <td style="padding: 10px; border: 1px solid var(--border-color);">${B.toFixed(2)}</td>
+                                    <td style="padding: 10px; border: 1px solid var(--border-color); font-weight: 700; color: var(--success); background: rgba(16, 185, 129, 0.05);">${finalVal.toFixed(2)}</td>
+                                    <td style="padding: 10px; border: 1px solid var(--border-color); font-weight: 700; color: #10B981; background: rgba(16, 185, 129, 0.03);">${target.toFixed(2)}</td>
                                 </tr>
                                 `;
                             }).join('')}
