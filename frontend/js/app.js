@@ -142,7 +142,7 @@ const App = (() => {
 
         sidebar.innerHTML = `
             <div class="sidebar-header" style="display: flex; align-items: center; gap: 10px; padding: 0 1.25rem;">
-                <img src="images/mic_logo.jpg" alt="MIC Logo" style="height: 32px; width: 32px; border-radius: 50%; object-fit: cover; border: 1.5px solid rgba(255,255,255,0.6); flex-shrink: 0;">
+                <img src="/images/mic_logo.jpg" alt="MIC Logo" style="height: 32px; width: 32px; border-radius: 50%; object-fit: cover; border: 1.5px solid rgba(255,255,255,0.6); flex-shrink: 0;">
                 <div class="sidebar-logo" style="font-size: 1.15rem; font-weight: 800; letter-spacing: -0.2px;">OBE MicTech</div>
             </div>
             <nav class="sidebar-nav">

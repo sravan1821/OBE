@@ -1334,7 +1334,29 @@ body.theme-purple .dropdown-item:hover { background: rgba(255, 255, 255, 0.06); 
         flex: 1 !important;
         padding: 1.25rem !important;
     }
+
+    /* Prevent mobile nesting padding accumulation */
+    .card {
+        padding: 1rem !important;
+    }
+    
+    .nested-panel {
+        padding: 10px !important;
+    }
+    
+    /* Stack syllabus unit rows vertically on mobile */
+    .syllabus-unit-row {
+        padding: 12px 16px !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+    }
+    
+    .syllabus-unit-row .badge {
+        align-self: flex-start !important;
+    }
 }
+
 
 /* Responsive grid for Program Outcomes */
 .responsive-po-grid {
