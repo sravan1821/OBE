@@ -4,6 +4,7 @@
 const App = (() => {
     let currentUser = null;
     let currentRole = null;
+    let profileDropdownTimer = null;
     const SIDEBAR_STATE_KEY = 'obe_sidebar_collapsed';
 
     /* =================== INIT =================== */
@@ -170,16 +171,28 @@ const App = (() => {
                         <div id="notif-dropdown" style="display:none; position:absolute; right:-10px; top:40px; width:300px; background:var(--bg-card); box-shadow:var(--shadow-lg); border-radius:8px; z-index:100; border:1px solid var(--border-color); max-height:350px; overflow-y:auto; padding:0; text-align:left;">
                         </div>
                     </div>
-                    <div class="user-profile">
+                    <div class="user-profile" id="user-profile-container">
                         <div class="user-info" style="text-align:right">
                             <div class="user-name">${userName}</div>
                             <div class="user-role">${roleLabels[currentRole]}</div>
                         </div>
                         <div class="user-avatar">${userName[0].toUpperCase()}</div>
-                        <div class="profile-dropdown">
-                            <button id="profile-logout-btn">
-                                ${icon('log-out', { size: 14 })} Logout
-                            </button>
+                        
+                        <div class="profile-dropdown" id="profile-dropdown">
+                            <div class="dropdown-user-header">
+                                <div class="dropdown-avatar">${userName[0].toUpperCase()}</div>
+                                <div class="dropdown-user-details">
+                                    <div class="dropdown-user-name">${userName}</div>
+                                    <div class="dropdown-user-email">${currentUser.email || (currentRole + '@obemictech.edu')}</div>
+                                    <span class="dropdown-role-badge badge-${currentRole}">${roleLabels[currentRole]}</span>
+                                </div>
+                            </div>
+                            <div class="dropdown-menu-list">
+                                <button class="dropdown-item logout-btn" id="profile-logout-btn">
+                                    ${icon('log-out', { size: 16 })}
+                                    <span>Logout</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -200,13 +213,102 @@ const App = (() => {
         if (btnLogout) {
             btnLogout.addEventListener('click', logout);
         }
+        document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar);
+        applySidebarState();
+        refreshNotifications();
+        setupProfileDropdown();
+    }
+
+    function setupProfileDropdown() {
+        const container = document.getElementById('user-profile-container');
+        const dropdown = document.getElementById('profile-dropdown');
+        if (!container || !dropdown) return;
+
+        // Hover events (immediate show, 5s delay hide)
+        container.addEventListener('mouseenter', () => {
+            if (profileDropdownTimer) {
+                clearTimeout(profileDropdownTimer);
+                profileDropdownTimer = null;
+            }
+            dropdown.classList.add('open');
+            container.classList.add('active');
+        });
+
+        container.addEventListener('mouseleave', () => {
+            if (profileDropdownTimer) clearTimeout(profileDropdownTimer);
+            profileDropdownTimer = setTimeout(() => {
+                dropdown.classList.remove('open');
+                container.classList.remove('active');
+            }, 5000); // 5 seconds delay!
+        });
+
+        // Click to toggle
+        container.addEventListener('click', (e) => {
+            const clickOnTrigger = e.target.closest('.user-avatar') || e.target.closest('.user-info');
+            if (clickOnTrigger) {
+                e.stopPropagation();
+                if (dropdown.classList.contains('open')) {
+                    dropdown.classList.remove('open');
+                    container.classList.remove('active');
+                    if (profileDropdownTimer) {
+                        clearTimeout(profileDropdownTimer);
+                        profileDropdownTimer = null;
+                    }
+                } else {
+                    if (profileDropdownTimer) {
+                        clearTimeout(profileDropdownTimer);
+                        profileDropdownTimer = null;
+                    }
+                    dropdown.classList.add('open');
+                    container.classList.add('active');
+                }
+            }
+        });
+
+        // Click outside to close immediately
+        const clickOutsideHandler = (e) => {
+            if (!container.contains(e.target)) {
+                dropdown.classList.remove('open');
+                container.classList.remove('active');
+                if (profileDropdownTimer) {
+                    clearTimeout(profileDropdownTimer);
+                    profileDropdownTimer = null;
+                }
+            }
+        };
+        document.removeEventListener('click', clickOutsideHandler);
+        document.addEventListener('click', clickOutsideHandler);
+
+        // Bind logout
         const profileLogout = document.getElementById('profile-logout-btn');
         if (profileLogout) {
             profileLogout.addEventListener('click', logout);
         }
-        document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar);
-        applySidebarState();
-        refreshNotifications();
+    }
+
+    function showSwitchingOverlay(targetName, onComplete) {
+        let overlay = document.getElementById('switching-account-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'switching-account-overlay';
+            overlay.className = 'switching-overlay';
+            overlay.innerHTML = `
+                <div class="switching-spinner"></div>
+                <div class="switching-text" id="switching-text">Switching to...</div>
+            `;
+            document.body.appendChild(overlay);
+        }
+        
+        const textEl = overlay.querySelector('#switching-text');
+        textEl.textContent = `Switching to ${targetName}...`;
+        overlay.classList.add('active');
+        
+        setTimeout(() => {
+            onComplete();
+            setTimeout(() => {
+                overlay.classList.remove('active');
+            }, 300);
+        }, 600);
     }
 
     function isSidebarCollapsed() {

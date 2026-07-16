@@ -708,58 +708,138 @@ body.theme-orange .tt-cell.tt-filled {
 }
 
 /* ============================================================
-   Profile Dropdown Hover Styles (Faculty / General)
+   Profile Dropdown Redesign & Styles (Professional Workflow)
    ============================================================ */
 .user-profile {
     position: relative;
     cursor: pointer;
-    padding: 8px 12px;
+    padding: 6px 12px;
     border-radius: 8px;
-    transition: background 0.2s ease;
+    transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.user-profile:hover {
+.user-profile:hover, .user-profile.active {
     background: rgba(255, 255, 255, 0.08);
 }
 .profile-dropdown {
-    display: none;
     position: absolute;
     top: 100%;
     right: 0;
-    margin-top: 8px;
+    margin-top: 10px;
+    width: 290px;
     background: var(--bg-card, #ffffff);
     border: 1px solid var(--border-color, #e2e8f0);
-    border-radius: 8px;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    min-width: 140px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
     z-index: 1000;
     overflow: hidden;
-    animation: fadeIn 0.2s ease-in-out;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
 }
-.user-profile:hover .profile-dropdown {
-    display: block;
+.profile-dropdown.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
 }
-.profile-dropdown button {
-    width: 100%;
-    padding: 10px 16px;
-    background: none;
-    border: none;
-    color: #ef4444; /* Standard red logout color */
-    font-weight: 600;
-    font-size: 0.85rem;
+
+
+/* Main Panel UI components */
+.dropdown-user-header {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-bottom: 1px solid var(--border-color, #e2e8f0);
+    background: rgba(0, 0, 0, 0.015);
+}
+.dropdown-avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent, #3b82f6), var(--primary, #1e3a8a));
+    color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    cursor: pointer;
-    transition: background 0.2s ease;
+    font-size: 1.25rem;
+    font-weight: 700;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    flex-shrink: 0;
 }
-.profile-dropdown button:hover {
+.dropdown-user-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+}
+.dropdown-user-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-main, #1e293b);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.dropdown-user-email {
+    font-size: 0.76rem;
+    color: var(--text-muted, #64748b);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.dropdown-role-badge {
+    font-size: 0.68rem;
+    padding: 2.5px 7px;
+    border-radius: 6px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-top: 4px;
+    align-self: flex-start;
+}
+.badge-faculty { background: rgba(59, 130, 246, 0.12); color: #2563eb; }
+.badge-hod { background: rgba(13, 148, 136, 0.12); color: #0d9488; }
+.badge-coordinator { background: rgba(147, 51, 234, 0.12); color: #9333ea; }
+.badge-management { background: rgba(234, 88, 12, 0.12); color: #ea580c; }
+
+.dropdown-menu-list {
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.dropdown-item {
+    width: 100%;
+    padding: 10px 14px;
+    border: none;
+    background: none;
+    border-radius: 8px;
+    color: var(--text-main, #1e293b);
+    font-size: 0.88rem;
+    font-weight: 550;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+    text-align: left;
+}
+.dropdown-item:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+body.theme-purple .dropdown-item:hover { background: rgba(255, 255, 255, 0.06); }
+
+.dropdown-item.logout-btn {
+    color: #ef4444;
+}
+.dropdown-item.logout-btn:hover {
     background: rgba(239, 68, 68, 0.08);
 }
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-5px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+
 
 /* ============================================================
    Expandable Subject Card and Sub-options styling
@@ -791,26 +871,28 @@ body.theme-orange .tt-cell.tt-filled {
 /* Toggle menu options */
 .menu-options-container {
     display: flex;
-    gap: 16px;
-    border-bottom: 2px solid var(--border-color);
-    padding-bottom: 12px;
-    margin-bottom: 15px;
+    gap: 8px;
+    margin-bottom: 20px;
     flex-wrap: nowrap;
     overflow-x: auto;
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE 10+ */
+    padding: 6px;
+    background: #f1f5f9;
+    border-radius: 50px;
+    width: max-content;
+    max-width: 100%;
 }
 .menu-options-container::-webkit-scrollbar {
     display: none; /* Safari and Chrome */
 }
 .menu-option-btn {
-    padding: 8px 16px;
-    background: none;
+    padding: 8px 20px;
+    background: transparent;
     border: none;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -14px;
+    border-radius: 50px;
     font-weight: 700;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     color: var(--text-muted);
     cursor: pointer;
     transition: all 0.2s ease;
@@ -818,11 +900,26 @@ body.theme-orange .tt-cell.tt-filled {
     flex-shrink: 0;
 }
 .menu-option-btn:hover {
-    color: var(--primary);
+    color: var(--text-dark);
+    background: rgba(15, 23, 42, 0.05);
 }
 .menu-option-btn.active {
-    color: var(--primary);
-    border-bottom-color: var(--primary);
+    color: var(--primary) !important;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+}
+.menu-option-btn:disabled,
+.menu-option-btn.locked-tab {
+    color: #94a3b8 !important;
+    cursor: not-allowed !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    opacity: 0.5;
+}
+.menu-option-btn:disabled:hover,
+.menu-option-btn.locked-tab:hover {
+    color: #94a3b8 !important;
+    background: transparent !important;
 }
 
 .syllabus-unit-row:hover {

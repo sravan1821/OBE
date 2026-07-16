@@ -9,6 +9,30 @@ const FacultyModule = (() => {
         return ROMAN_NUMERALS[parseInt(sem)] || sem;
     }
 
+    function getSubjectProgress(subjectId) {
+        try {
+            const data = JSON.parse(localStorage.getItem(`obe_progress_${subjectId}`)) || {
+                indirect: false,
+                direct: false,
+                copo: false,
+                overall: false
+            };
+            return data;
+        } catch {
+            return { indirect: false, direct: false, copo: false, overall: false };
+        }
+    }
+
+    function setSubjectProgress(subjectId, stage, value) {
+        try {
+            const data = getSubjectProgress(subjectId);
+            data[stage] = value;
+            localStorage.setItem(`obe_progress_${subjectId}`, JSON.stringify(data));
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
     function renderSection(section) {
         const c = App.getContent();
         switch (section) {
@@ -506,6 +530,11 @@ const FacultyModule = (() => {
         if (expandedSubjectId) {
             const s = subjects.find(sub => sub.id === expandedSubjectId);
             const subUploads = uploads[s.id] || {};
+            const progress = getSubjectProgress(s.id);
+            const isDirectLocked = !progress.indirect;
+            const isCopoLocked = !progress.direct;
+            const isOverallLocked = !progress.copo;
+            const isPrintableLocked = !progress.overall;
 
             c.innerHTML = `
             <div class="fade-in">
@@ -527,19 +556,107 @@ const FacultyModule = (() => {
                         <button class="menu-option-btn ${activeSubTab === 'syllabus' ? 'active' : ''}" data-tab="syllabus">Syllabus</button>
                         <button class="menu-option-btn ${activeSubTab === 'cos' ? 'active' : ''}" data-tab="cos">List of CO's</button>
                         <button class="menu-option-btn ${activeSubTab === 'pos' ? 'active' : ''}" data-tab="pos">List of PO's</button>
-                        <button class="menu-option-btn ${activeSubTab === 'indirect' ? 'active' : ''}" data-tab="indirect">Indirect Assessment</button>
-                        <button class="menu-option-btn ${activeSubTab === 'direct' ? 'active' : ''}" data-tab="direct">Direct Assessment</button>
-                        <button class="menu-option-btn ${activeSubTab === 'copo_attainment' ? 'active' : ''}" data-tab="copo_attainment">CO-PO Attainment</button>
-                        <button class="menu-option-btn ${activeSubTab === 'overall_attainment' ? 'active' : ''}" data-tab="overall_attainment">overall attainment</button>
-                        <button class="menu-option-btn ${activeSubTab === 'printable_summary' ? 'active' : ''}" data-tab="printable_summary">printable summary of attainment</button>
+                        
+                        <button class="menu-option-btn ${activeSubTab === 'indirect' ? 'active' : ''}" data-tab="indirect">
+                            ${progress.indirect 
+                                ? '<span style="color: #0ea5e9; font-weight: bold; margin-right: 5px;">✓</span>' 
+                                : '<span style="color: #ef4444; font-weight: bold; margin-right: 5px;">✗</span>'}
+                            Indirect Assessment
+                        </button>
+                        
+                        <button class="menu-option-btn ${activeSubTab === 'direct' ? 'active' : ''} ${isDirectLocked ? 'locked-tab' : ''}" 
+                            data-tab="direct" ${isDirectLocked ? 'disabled title="Complete Indirect Assessment to unlock"' : ''}>
+                            ${progress.direct 
+                                ? '<span style="color: #0ea5e9; font-weight: bold; margin-right: 5px;">✓</span>' 
+                                : (isDirectLocked 
+                                    ? '<span style="color: #ef4444; font-weight: bold; margin-right: 5px;">🔒</span>' 
+                                    : '<span style="color: #ef4444; font-weight: bold; margin-right: 5px;">✗</span>')}
+                            Direct Assessment
+                        </button>
+                        
+                        <button class="menu-option-btn ${activeSubTab === 'copo_attainment' ? 'active' : ''} ${isCopoLocked ? 'locked-tab' : ''}" 
+                            data-tab="copo_attainment" ${isCopoLocked ? 'disabled title="Complete Direct Assessment to unlock"' : ''}>
+                            ${progress.copo 
+                                ? '<span style="color: #0ea5e9; font-weight: bold; margin-right: 5px;">✓</span>' 
+                                : (isCopoLocked 
+                                    ? '<span style="color: #ef4444; font-weight: bold; margin-right: 5px;">🔒</span>' 
+                                    : '<span style="color: #ef4444; font-weight: bold; margin-right: 5px;">✗</span>')}
+                            CO-PO Attainment
+                        </button>
+                        
+                        <button class="menu-option-btn ${activeSubTab === 'overall_attainment' ? 'active' : ''} ${isOverallLocked ? 'locked-tab' : ''}" 
+                            data-tab="overall_attainment" ${isOverallLocked ? 'disabled title="Complete CO-PO Attainment to unlock"' : ''}>
+                            ${progress.overall 
+                                ? '<span style="color: #0ea5e9; font-weight: bold; margin-right: 5px;">✓</span>' 
+                                : (isOverallLocked 
+                                    ? '<span style="color: #ef4444; font-weight: bold; margin-right: 5px;">🔒</span>' 
+                                    : '<span style="color: #ef4444; font-weight: bold; margin-right: 5px;">✗</span>')}
+                            overall attainment
+                        </button>
+                        
+                        <button class="menu-option-btn ${activeSubTab === 'printable_summary' ? 'active' : ''} ${isPrintableLocked ? 'locked-tab' : ''}" 
+                            data-tab="printable_summary" ${isPrintableLocked ? 'disabled title="Complete Overall Attainment to unlock"' : ''}>
+                            ${isPrintableLocked 
+                                ? '<span style="color: #ef4444; font-weight: bold; margin-right: 5px;">🔒</span>' 
+                                : '<span style="color: #0ea5e9; font-weight: bold; margin-right: 5px;">✓</span>'}
+                            printable summary of attainment
+                        </button>
                     </div>
 
                     <!-- Tab content panels -->
                     <div class="tab-content-area" style="margin-top: 1.25rem;">
                         ${renderCardSubTabContent(s, subUploads)}
+
+                        ${(() => {
+                            const SUBTAB_ORDER = ['syllabus', 'cos', 'pos', 'indirect', 'direct', 'copo_attainment', 'overall_attainment', 'printable_summary'];
+                            const SUBTAB_LABELS = {
+                                syllabus: 'Syllabus', cos: "List of CO's", pos: "List of PO's",
+                                indirect: 'Indirect Assessment', direct: 'Direct Assessment',
+                                copo_attainment: 'CO-PO Attainment', overall_attainment: 'Overall Attainment',
+                                printable_summary: 'Printable Summary'
+                            };
+                            const currentIdx = SUBTAB_ORDER.indexOf(activeSubTab);
+                            const prevTab = currentIdx > 0 ? SUBTAB_ORDER[currentIdx - 1] : null;
+                            const nextTab = currentIdx < SUBTAB_ORDER.length - 1 ? SUBTAB_ORDER[currentIdx + 1] : null;
+
+                            // Check if next tab is locked
+                            const lockMap = { direct: isDirectLocked, copo_attainment: isCopoLocked, overall_attainment: isOverallLocked, printable_summary: isPrintableLocked };
+                            const isNextLocked = nextTab && lockMap[nextTab];
+
+                            return `
+                            <div class="step-nav-bar" style="display: flex; justify-content: space-between; align-items: center; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+                                ${prevTab ? `
+                                    <button class="step-prev-btn" data-target="${prevTab}" 
+                                        style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 22px; border-radius: 8px; border: 1.5px solid var(--border-color); background: #fff; color: var(--text-dark); font-weight: 700; font-size: 0.88rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+                                        ${icon('chevron-left', { size: 18 })}
+                                        <span style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.25;">
+                                            <span style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600;">Previous</span>
+                                            <span>${SUBTAB_LABELS[prevTab]}</span>
+                                        </span>
+                                    </button>
+                                ` : `<div></div>`}
+
+                                <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 600;">
+                                    Step ${currentIdx + 1} of ${SUBTAB_ORDER.length}
+                                </span>
+
+                                ${nextTab ? `
+                                    <button class="step-next-btn" data-target="${nextTab}" 
+                                        ${isNextLocked ? 'disabled' : ''}
+                                        style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 22px; border-radius: 8px; border: none; background: ${isNextLocked ? '#e2e8f0' : 'var(--primary)'}; color: ${isNextLocked ? '#94a3b8' : '#fff'}; font-weight: 700; font-size: 0.88rem; cursor: ${isNextLocked ? 'not-allowed' : 'pointer'}; transition: all 0.2s; box-shadow: ${isNextLocked ? 'none' : '0 4px 12px rgba(15, 23, 42, 0.15)'}; opacity: ${isNextLocked ? '0.6' : '1'};">
+                                        <span style="display: flex; flex-direction: column; align-items: flex-end; line-height: 1.25;">
+                                            <span style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.85; font-weight: 600;">Next</span>
+                                            <span>${isNextLocked ? '🔒 ' : ''}${SUBTAB_LABELS[nextTab]}</span>
+                                        </span>
+                                        ${icon('chevron-right', { size: 18 })}
+                                    </button>
+                                ` : `<div></div>`}
+                            </div>`;
+                        })()}
                     </div>
                 </div>
             </div>`;
+
 
             // Bind back button
             c.querySelector('.back-to-subjects-btn').addEventListener('click', () => {
@@ -557,6 +674,23 @@ const FacultyModule = (() => {
                     renderAssignedSubjects(c);
                 });
             });
+
+            // Bind step navigation (Previous / Next)
+            const prevBtn = c.querySelector('.step-prev-btn');
+            if (prevBtn) {
+                prevBtn.addEventListener('click', () => {
+                    activeSubTab = prevBtn.dataset.target;
+                    renderAssignedSubjects(c);
+                });
+            }
+            const nextBtn = c.querySelector('.step-next-btn');
+            if (nextBtn) {
+                nextBtn.addEventListener('click', () => {
+                    if (nextBtn.disabled) return;
+                    activeSubTab = nextBtn.dataset.target;
+                    renderAssignedSubjects(c);
+                });
+            }
 
             // Bind events for the active panel
             bindExpandedPanelEvents(c, s.id, uploads);
@@ -823,6 +957,7 @@ const FacultyModule = (() => {
             const students = DataStore.getStudentsByDeptAndSemester(s.departmentId, s.semester);
             const surveyData = getIndirectSurveyData(s.id, students);
             const { summary, averages } = calculateIndirectSurveySummary(s.id, students);
+            const progress = getSubjectProgress(s.id);
 
             let rows = '';
             students.forEach((stu, idx) => {
@@ -835,11 +970,12 @@ const FacultyModule = (() => {
                     ${['CO1', 'CO2', 'CO3', 'CO4', 'CO5'].map(co => `
                         <td>
                             <input type="number" min="1" max="5" step="1" 
+                                disabled
                                 class="survey-score-input text-center" 
                                 data-stuid="${stu.id}" 
                                 data-co="${co}" 
                                 value="${scores[co] || 5}" 
-                                style="width: 60px; padding: 4px; border: 1px solid var(--border-color); border-radius: 4px; font-weight: 600; color: var(--text-dark);">
+                                style="width: 60px; padding: 4px; border: 1px solid var(--border-color); border-radius: 4px; font-weight: 600; color: var(--text-dark); background-color: var(--bg-light); cursor: not-allowed; opacity: 0.85;">
                         </td>
                     `).join('')}
                 </tr>`;
@@ -902,13 +1038,20 @@ const FacultyModule = (() => {
                     </table>
                 </div>
 
-                <div style="display: flex; justify-content: center; gap: 15px; margin-top: 1rem;">
-                    <button class="btn-pro btn-pro-primary save-survey-btn">
-                        ${iconText('save', 'Save Survey Data')}
-                    </button>
-                    <button class="btn-pro btn-pro-secondary reset-survey-btn">
-                        ${iconText('rotate-ccw', 'Reset Defaults')}
-                    </button>
+                <!-- Complete Workflow Action -->
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px dashed var(--border-color);">
+                    ${progress.indirect ? `
+                        <div style="background-color: rgba(16, 185, 129, 0.1); border: 1px solid #10B981; padding: 12px 24px; border-radius: 6px; text-align: center; color: #047857; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                            ${icon('check-circle', { size: 20 })} Indirect Assessment Completed! Direct Assessment is now unlocked.
+                        </div>
+                    ` : `
+                        <div style="font-size: 0.85rem; color: #10B981; font-weight: 600; display: flex; align-items: center; gap: 6px; margin-bottom: 0.5rem;">
+                            ${icon('info', { size: 16 })} Pre-populated Course End Survey data is locked and constant.
+                        </div>
+                        <button class="btn-pro btn-pro-success complete-indirect-btn" style="background-color: #10b981; color: white; padding: 10px 24px; font-weight: 700; border-radius: 6px; display: inline-flex; align-items: center; gap: 8px; border: none; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);">
+                            ${iconText('check-square', 'Confirm & Complete Indirect Assessment')}
+                        </button>
+                    `}
                 </div>
             </div>
             `;
@@ -917,6 +1060,7 @@ const FacultyModule = (() => {
         if (activeSubTab === 'direct') {
             const T = getTargetLevel(s.id);
             const directData = getDirectAssessmentData(s.id);
+            const progress = getSubjectProgress(s.id);
 
             return `
             <div class="nested-panel">
@@ -970,12 +1114,26 @@ const FacultyModule = (() => {
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Complete Workflow Action -->
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px dashed var(--border-color);">
+                    ${progress.direct ? `
+                        <div style="background-color: rgba(16, 185, 129, 0.1); border: 1px solid #10B981; padding: 12px 24px; border-radius: 6px; text-align: center; color: #047857; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                            ${icon('check-circle', { size: 20 })} Direct Assessment Completed! CO-PO Attainment is now unlocked.
+                        </div>
+                    ` : `
+                        <button class="btn-pro btn-pro-success complete-direct-btn" style="background-color: #10b981; color: white; padding: 10px 24px; font-weight: 700; border-radius: 6px; display: inline-flex; align-items: center; gap: 8px; border: none; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);">
+                            ${iconText('check-square', 'Confirm & Complete Direct Assessment')}
+                        </button>
+                    `}
+                </div>
             </div>`;
         }
 
         if (activeSubTab === 'copo_attainment') {
             const students = DataStore.getStudentsByDeptAndSemester(s.departmentId, s.semester);
             const poData = getCOPOAttainmentData(s.id, students);
+            const progress = getSubjectProgress(s.id);
 
             return `
             <div class="nested-panel">
@@ -1043,7 +1201,7 @@ const FacultyModule = (() => {
                         </tbody>
                     </table>
                 </div>
-
+ 
                 <!-- PO's Attainment Bar Graph -->
                 <div class="chart-section" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 8px; background: #fff; max-width: 800px; margin: 0 auto;">
                     <h4 style="margin: 0 0 15px 0; font-size: 1.1rem; color: var(--text-dark); text-align: center;">PO Attainment</h4>
@@ -1051,15 +1209,29 @@ const FacultyModule = (() => {
                         <canvas id="chart-copo-attainment"></canvas>
                     </div>
                 </div>
+
+                <!-- Complete Workflow Action -->
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px dashed var(--border-color);">
+                    ${progress.copo ? `
+                        <div style="background-color: rgba(16, 185, 129, 0.1); border: 1px solid #10B981; padding: 12px 24px; border-radius: 6px; text-align: center; color: #047857; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                            ${icon('check-circle', { size: 20 })} CO-PO Attainment Matrix Completed! Overall Attainment is now unlocked.
+                        </div>
+                    ` : `
+                        <button class="btn-pro btn-pro-success complete-copo-btn" style="background-color: #10b981; color: white; padding: 10px 24px; font-weight: 700; border-radius: 6px; display: inline-flex; align-items: center; gap: 8px; border: none; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);">
+                            ${iconText('check-square', 'Confirm & Complete CO-PO Attainment')}
+                        </button>
+                    `}
+                </div>
             </div>`;
         }
-
+ 
         if (activeSubTab === 'overall_attainment') {
             const T = getTargetLevel(s.id);
             const directData = getDirectAssessmentData(s.id);
             const students = DataStore.getStudentsByDeptAndSemester(s.departmentId, s.semester);
             const { summary: indirectSummary, averages: indirectAverages } = calculateIndirectSurveySummary(s.id, students);
-
+            const progress = getSubjectProgress(s.id);
+ 
             return `
             <div class="nested-panel" style="text-align: left;">
                 <!-- Table 1 -->
@@ -1170,7 +1342,7 @@ const FacultyModule = (() => {
                         </tbody>
                     </table>
                 </div>
-
+ 
                 <!-- Summary of CO Attainment Bar Graph -->
                 <div class="chart-section" style="padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 8px; background: #fff; max-width: 800px; margin: 0 auto;">
                     <h4 style="margin: 0 0 15px 0; font-size: 1.1rem; color: var(--text-dark); text-align: center;">Summary of CO Attainment</h4>
@@ -1178,16 +1350,29 @@ const FacultyModule = (() => {
                         <canvas id="chart-overall-attainment"></canvas>
                     </div>
                 </div>
+
+                <!-- Complete Workflow Action -->
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px dashed var(--border-color);">
+                    ${progress.overall ? `
+                        <div style="background-color: rgba(16, 185, 129, 0.1); border: 1px solid #10B981; padding: 12px 24px; border-radius: 6px; text-align: center; color: #047857; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                            ${icon('check-circle', { size: 20 })} Overall Attainment Completed! Printable Summary is now unlocked.
+                        </div>
+                    ` : `
+                        <button class="btn-pro btn-pro-success complete-overall-btn" style="background-color: #10b981; color: white; padding: 10px 24px; font-weight: 700; border-radius: 6px; display: inline-flex; align-items: center; gap: 8px; border: none; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.2);">
+                            ${iconText('check-square', 'Confirm & Complete Overall Attainment')}
+                        </button>
+                    `}
+                </div>
             </div>`;
         }
-
+ 
         if (activeSubTab === 'printable_summary') {
             const T = getTargetLevel(s.id);
             const directData = getDirectAssessmentData(s.id);
             const students = DataStore.getStudentsByDeptAndSemester(s.departmentId, s.semester);
             const { averages: indirectAverages } = calculateIndirectSurveySummary(s.id, students);
             const poData = getCOPOAttainmentData(s.id, students);
-
+ 
             return `
             <div class="nested-panel" id="printable-document-area" style="background: #fff; padding: 2rem; border-radius: 8px; border: 1px solid var(--border-color); text-align: left;">
                 <style>
@@ -1214,11 +1399,15 @@ const FacultyModule = (() => {
                         font-weight: 700;
                     }
                 </style>
-
-                <div class="no-print" style="display: flex; justify-content: flex-end; margin-bottom: 1.5rem;">
+ 
+                <div class="no-print" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <button class="btn-pro btn-pro-secondary reset-progress-btn" style="color: var(--danger); border: 1.5px solid var(--danger); background: none; border-radius: 6px; padding: 8px 16px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s;">
+                        ${icon('rotate-ccw', { size: 16 })} Reset Workflow Progress
+                    </button>
                     <button class="btn-pro btn-pro-primary print-summary-trigger">
                         ${icon('printer', { size: 18 })} Print Summary Statement
                     </button>
+                </div>
                 </div>
 
                 <!-- Header Details -->
@@ -1573,38 +1762,13 @@ const FacultyModule = (() => {
 
 
         if (activeSubTab === 'indirect') {
-            const inputs = panel.querySelectorAll('.survey-score-input');
-            inputs.forEach(inp => {
-                inp.addEventListener('input', () => {
-                    let val = parseInt(inp.value);
-                    if (isNaN(val) || val < 1) val = 1;
-                    if (val > 5) val = 5;
-                    inp.value = val;
-
-                    const stuId = inp.dataset.stuid;
-                    const co = inp.dataset.co;
-                    const surveyData = getIndirectSurveyData(sId, students);
-                    if (!surveyData[stuId]) surveyData[stuId] = {};
-                    surveyData[stuId][co] = val;
-                    saveIndirectSurveyData(sId, surveyData);
-
-                    updateIndirectSurveySummaryUI(panel, sId, students);
-                });
-            });
-
-            const saveBtn = panel.querySelector('.save-survey-btn');
-            if (saveBtn) {
-                saveBtn.addEventListener('click', () => {
-                    App.showToast('Survey scores saved successfully!', 'success');
-                });
-            }
-
-            const resetBtn = panel.querySelector('.reset-survey-btn');
-            if (resetBtn) {
-                resetBtn.addEventListener('click', () => {
-                    localStorage.removeItem(INDIRECT_SURVEY_KEY);
+            const completeBtn = panel.querySelector('.complete-indirect-btn');
+            if (completeBtn) {
+                completeBtn.addEventListener('click', () => {
+                    setSubjectProgress(sId, 'indirect', true);
+                    activeSubTab = 'direct';
                     renderAssignedSubjects(c);
-                    App.showToast('Survey scores reset to default values.', 'success');
+                    App.showToast('Indirect Assessment completed! Direct Assessment is now unlocked.', 'success');
                 });
             }
         }
@@ -1616,6 +1780,15 @@ const FacultyModule = (() => {
                     setTargetLevel(sId, e.target.value);
                     renderAssignedSubjects(c);
                     App.showToast(`Target level updated to ${e.target.value}%`, 'success');
+                });
+            }
+            const completeBtn = panel.querySelector('.complete-direct-btn');
+            if (completeBtn) {
+                completeBtn.addEventListener('click', () => {
+                    setSubjectProgress(sId, 'direct', true);
+                    activeSubTab = 'copo_attainment';
+                    renderAssignedSubjects(c);
+                    App.showToast('Direct Assessment completed! CO-PO Attainment is now unlocked.', 'success');
                 });
             }
         }
@@ -1712,6 +1885,15 @@ const FacultyModule = (() => {
                     }
                 });
             }
+                      const completeBtn = panel.querySelector('.complete-copo-btn');
+            if (completeBtn) {
+                completeBtn.addEventListener('click', () => {
+                    setSubjectProgress(sId, 'copo', true);
+                    activeSubTab = 'overall_attainment';
+                    renderAssignedSubjects(c);
+                    App.showToast('CO-PO Attainment Matrix completed! Overall Attainment is now unlocked.', 'success');
+                });
+            }
         }
 
         if (activeSubTab === 'overall_attainment') {
@@ -1730,17 +1912,22 @@ const FacultyModule = (() => {
                 const directValues = cos.map(co => directData[co].direct3Scale);
                 const indirectValues = cos.map(co => indirectAverages[co]);
                 const finalValues = cos.map(co => {
+                    const A = directData[co].direct3Scale;
+                    const B = indirectAverages[co];
+                    let f = 0.6 * A + 0.4 * B;
                     if (targetLevel === 65) {
                         const exactFinals = { CO1: 1.76, CO2: 2.35, CO3: 1.84, CO4: 1.99, CO5: 1.76 };
-                        return exactFinals[co];
+                        f = exactFinals[co];
                     }
-                    return 0.6 * directData[co].direct3Scale + 0.4 * indirectAverages[co];
+                    return f;
                 });
+                const targetValues = cos.map(co => directData[co].target3Scale);
 
                 const style = getComputedStyle(document.body);
                 const accentColor = style.getPropertyValue('--accent').trim() || '#3b82f6';
                 const successColor = style.getPropertyValue('--success').trim() || '#10b981';
                 const dangerColor = style.getPropertyValue('--danger').trim() || '#ef4444';
+                const primaryColor = style.getPropertyValue('--primary').trim() || '#0f172a';
 
                 charts[chartId] = new Chart(ctx, {
                     type: 'bar',
@@ -1748,52 +1935,40 @@ const FacultyModule = (() => {
                         labels: cos,
                         datasets: [
                             {
-                                label: 'Direct CO Attainment',
+                                label: 'Direct Assessment (60%)',
                                 data: directValues,
-                                backgroundColor: function(context) {
-                                    const {ctx, chartArea} = context.chart;
-                                    if (!chartArea) return null;
-                                    const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-                                    gradient.addColorStop(0, hexToRgba(accentColor, 0.15));
-                                    gradient.addColorStop(1, hexToRgba(accentColor, 0.85));
-                                    return gradient;
-                                },
+                                backgroundColor: hexToRgba(accentColor, 0.7),
                                 borderColor: accentColor,
-                                borderWidth: 1.5,
-                                borderRadius: { topLeft: 4, topRight: 4 },
-                                borderSkipped: 'bottom'
+                                borderWidth: 1,
+                                borderRadius: 4
                             },
                             {
-                                label: 'Indirect CO Attainment',
+                                label: 'Indirect Assessment (40%)',
                                 data: indirectValues,
-                                backgroundColor: function(context) {
-                                    const {ctx, chartArea} = context.chart;
-                                    if (!chartArea) return null;
-                                    const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-                                    gradient.addColorStop(0, hexToRgba(dangerColor, 0.15));
-                                    gradient.addColorStop(1, hexToRgba(dangerColor, 0.85));
-                                    return gradient;
-                                },
-                                borderColor: dangerColor,
-                                borderWidth: 1.5,
-                                borderRadius: { topLeft: 4, topRight: 4 },
-                                borderSkipped: 'bottom'
+                                backgroundColor: hexToRgba(primaryColor, 0.4),
+                                borderColor: primaryColor,
+                                borderWidth: 1,
+                                borderRadius: 4
                             },
                             {
-                                label: 'Final CO Attainment',
+                                label: 'Final Attainment',
                                 data: finalValues,
-                                backgroundColor: function(context) {
-                                    const {ctx, chartArea} = context.chart;
-                                    if (!chartArea) return null;
-                                    const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-                                    gradient.addColorStop(0, hexToRgba(successColor, 0.15));
-                                    gradient.addColorStop(1, hexToRgba(successColor, 0.85));
-                                    return gradient;
-                                },
+                                backgroundColor: hexToRgba(successColor, 0.85),
                                 borderColor: successColor,
                                 borderWidth: 1.5,
-                                borderRadius: { topLeft: 4, topRight: 4 },
-                                borderSkipped: 'bottom'
+                                borderRadius: 4
+                            },
+                            {
+                                label: 'Target Attainment',
+                                data: targetValues,
+                                type: 'line',
+                                borderColor: dangerColor,
+                                borderDash: [6, 4],
+                                borderWidth: 2,
+                                pointStyle: 'rectRot',
+                                pointRadius: 5,
+                                pointBackgroundColor: dangerColor,
+                                fill: false
                             }
                         ]
                     },
@@ -1805,7 +1980,7 @@ const FacultyModule = (() => {
                                 beginAtZero: true,
                                 max: 3.0,
                                 ticks: {
-                                    stepSize: 0.50,
+                                    stepSize: 0.5,
                                     font: { family: "'Outfit', 'Inter', sans-serif", size: 11, weight: '500' },
                                     color: '#64748b'
                                 },
@@ -1816,7 +1991,7 @@ const FacultyModule = (() => {
                                 },
                                 title: {
                                     display: true,
-                                    text: '3-Point Scale',
+                                    text: 'Attainment (3-Scale)',
                                     font: { family: "'Outfit', sans-serif", size: 12, weight: 'bold' },
                                     color: '#475569'
                                 }
@@ -1826,13 +2001,7 @@ const FacultyModule = (() => {
                                     font: { family: "'Outfit', 'Inter', sans-serif", size: 11, weight: '600' },
                                     color: '#64748b'
                                 },
-                                grid: { display: false, drawBorder: false },
-                                title: {
-                                    display: true,
-                                    text: 'COs',
-                                    font: { family: "'Outfit', sans-serif", size: 12, weight: 'bold' },
-                                    color: '#475569'
-                                }
+                                grid: { display: false, drawBorder: false }
                             }
                         },
                         plugins: {
@@ -1840,7 +2009,7 @@ const FacultyModule = (() => {
                                 position: 'bottom',
                                 labels: {
                                     font: { family: "'Outfit', 'Inter', sans-serif", size: 11, weight: '600' },
-                                    color: '#475569',
+                                    color: '#64748b',
                                     boxWidth: 12,
                                     usePointStyle: true,
                                     pointStyle: 'circle'
@@ -1859,6 +2028,16 @@ const FacultyModule = (() => {
                     }
                 });
             }
+
+            const completeBtn = panel.querySelector('.complete-overall-btn');
+            if (completeBtn) {
+                completeBtn.addEventListener('click', () => {
+                    setSubjectProgress(sId, 'overall', true);
+                    activeSubTab = 'printable_summary';
+                    renderAssignedSubjects(c);
+                    App.showToast('Overall Attainment completed! Printable Summary report is now unlocked.', 'success');
+                });
+            }
         }
 
         if (activeSubTab === 'printable_summary') {
@@ -1868,6 +2047,15 @@ const FacultyModule = (() => {
                     window.print();
                 });
             }
+            const resetProgBtn = panel.querySelector('.reset-progress-btn');
+            if (resetProgBtn) {
+                resetProgBtn.addEventListener('click', () => {
+                    localStorage.removeItem(`obe_progress_${sId}`);
+                    activeSubTab = 'indirect';
+                    renderAssignedSubjects(c);
+                    App.showToast('Workflow progress reset successfully.', 'info');
+                });
+            }        
 
             const style = getComputedStyle(document.body);
             const accentColor = style.getPropertyValue('--accent').trim() || '#3b82f6';
