@@ -67,7 +67,7 @@ const FacultyModule = (() => {
                 <!-- Marks Entry Donut Chart -->
                 <div class="card" style="margin-bottom:0;">
                     <div class="card-header"><h3>Attainment Status</h3></div>
-                    <div class="card-body" style="display:flex; align-items:center; justify-content:center; gap:20px; min-height:180px;">
+                    <div class="card-body dashboard-flex-row" style="min-height:180px;">
                         <div style="flex:1; min-width: 130px; max-width: 130px; margin: 0 auto;">
                             <canvas id="fac-dashboard-chart"></canvas>
                         </div>
@@ -624,13 +624,12 @@ const FacultyModule = (() => {
                             const isNextLocked = nextTab && lockMap[nextTab];
 
                             return `
-                            <div class="step-nav-bar" style="display: flex; justify-content: space-between; align-items: center; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+                            <div class="step-nav-bar" style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
                                 ${prevTab ? `
-                                    <button class="step-prev-btn" data-target="${prevTab}" 
-                                        style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 22px; border-radius: 8px; border: 1.5px solid var(--border-color); background: #fff; color: var(--text-dark); font-weight: 700; font-size: 0.88rem; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.06);">
+                                    <button class="step-prev-btn" data-target="${prevTab}">
                                         ${icon('chevron-left', { size: 18 })}
-                                        <span style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.25;">
-                                            <span style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); font-weight: 600;">Previous</span>
+                                        <span>
+                                            <span class="step-btn-sublabel">Previous</span>
                                             <span>${SUBTAB_LABELS[prevTab]}</span>
                                         </span>
                                     </button>
@@ -641,11 +640,9 @@ const FacultyModule = (() => {
                                 </span>
 
                                 ${nextTab ? `
-                                    <button class="step-next-btn" data-target="${nextTab}" 
-                                        ${isNextLocked ? 'disabled' : ''}
-                                        style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 22px; border-radius: 8px; border: none; background: ${isNextLocked ? '#e2e8f0' : 'var(--primary)'}; color: ${isNextLocked ? '#94a3b8' : '#fff'}; font-weight: 700; font-size: 0.88rem; cursor: ${isNextLocked ? 'not-allowed' : 'pointer'}; transition: all 0.2s; box-shadow: ${isNextLocked ? 'none' : '0 4px 12px rgba(15, 23, 42, 0.15)'}; opacity: ${isNextLocked ? '0.6' : '1'};">
-                                        <span style="display: flex; flex-direction: column; align-items: flex-end; line-height: 1.25;">
-                                            <span style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.85; font-weight: 600;">Next</span>
+                                    <button class="step-next-btn" data-target="${nextTab}" ${isNextLocked ? 'disabled' : ''}>
+                                        <span>
+                                            <span class="step-btn-sublabel">Next</span>
                                             <span>${isNextLocked ? '🔒 ' : ''}${SUBTAB_LABELS[nextTab]}</span>
                                         </span>
                                         ${icon('chevron-right', { size: 18 })}
@@ -830,7 +827,7 @@ const FacultyModule = (() => {
             return `
             <div class="nested-panel">
                 <h4 style="margin: 0 0 1rem 0; font-size: 1.1rem; color: var(--primary); text-align: center;">Program Outcomes (POs)</h4>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: left; max-width: 900px; margin: 0 auto;">
+                <div class="responsive-po-grid" style="text-align: left; max-width: 900px; margin: 0 auto;">
                     ${PROGRAM_OUTCOMES.map(item => `
                         <div style="border: 1px solid var(--border-color); border-radius: 8px; padding: 12px; background: #fff; transition: all 0.2s ease;">
                             <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">

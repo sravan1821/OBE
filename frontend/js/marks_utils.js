@@ -56,9 +56,10 @@ const MarksUtils = (() => {
 
         const gv = (o,k) => (o && o[k] !== undefined && o[k] !== null) ? o[k] : '';
         const cell = (stuId, mid, field, max, val) => {
+            const midClass = mid === 'mid1' ? 'col-mid1 col-mid1-details' : 'col-mid2 col-mid2-details';
             if (editable)
-                return `<td><input type="number" class="marks-input mi" data-s="${stuId}" data-m="${mid}" data-f="${field}" value="${val}" min="0" max="${max}" step="0.5"></td>`;
-            return `<td>${val !== '' ? val : '—'}</td>`;
+                return `<td class="${midClass}"><input type="number" class="marks-input mi" data-s="${stuId}" data-m="${mid}" data-f="${field}" value="${val}" min="0" max="${max}" step="0.5"></td>`;
+            return `<td class="${midClass}">${val !== '' ? val : '—'}</td>`;
         };
 
         let rows = '';
@@ -77,17 +78,17 @@ const MarksUtils = (() => {
                 <td class="sticky-col sc3 fw-600">${st.name}</td>
                 ${cell(st.id,'mid1','q1',10,v(d1,'q1'))}${cell(st.id,'mid1','q2',10,v(d1,'q2'))}${cell(st.id,'mid1','q3',10,v(d1,'q3'))}
                 ${cell(st.id,'mid1','q4',10,v(d1,'q4'))}${cell(st.id,'mid1','q5',10,v(d1,'q5'))}${cell(st.id,'mid1','q6',10,v(d1,'q6'))}
-                <td class="fw-700 dc" data-s="${st.id}" data-m="mid1" style="color:var(--neon-cyan)">${has1?c1.desc:'—'}</td>
+                <td class="fw-700 dc col-mid1 col-mid1-details" data-s="${st.id}" data-m="mid1" style="color:var(--neon-cyan)">${has1?c1.desc:'—'}</td>
                 ${cell(st.id,'mid1','unitTest',20,v(d1,'unitTest'))}
                 ${cell(st.id,'mid1','assignment',10,v(d1,'assignment'))}
-                <td class="fw-700 mc" data-s="${st.id}" data-m="mid1" style="color:var(--neon-blue)">${has1?c1.total:'—'}</td>
+                <td class="fw-700 mc col-mid1 col-mid1-total" data-s="${st.id}" data-m="mid1" style="color:var(--neon-blue)">${has1?c1.total:'—'}</td>
                 ${cell(st.id,'mid2','q1',10,v(d2,'q1'))}${cell(st.id,'mid2','q2',10,v(d2,'q2'))}${cell(st.id,'mid2','q3',10,v(d2,'q3'))}
                 ${cell(st.id,'mid2','q4',10,v(d2,'q4'))}${cell(st.id,'mid2','q5',10,v(d2,'q5'))}${cell(st.id,'mid2','q6',10,v(d2,'q6'))}
-                <td class="fw-700 dc" data-s="${st.id}" data-m="mid2" style="color:var(--neon-cyan)">${has2?c2.desc:'—'}</td>
+                <td class="fw-700 dc col-mid2 col-mid2-details" data-s="${st.id}" data-m="mid2" style="color:var(--neon-cyan)">${has2?c2.desc:'—'}</td>
                 ${cell(st.id,'mid2','unitTest',20,v(d2,'unitTest'))}
                 ${cell(st.id,'mid2','assignment',10,v(d2,'assignment'))}
-                <td class="fw-700 mc" data-s="${st.id}" data-m="mid2" style="color:var(--neon-purple)">${has2?c2.total:'—'}</td>
-                <td class="fw-700 fc" data-s="${st.id}" style="color:var(--neon-green)">${(has1||has2)?fin:'—'}</td>
+                <td class="fw-700 mc col-mid2 col-mid2-total" data-s="${st.id}" data-m="mid2" style="color:var(--neon-purple)">${has2?c2.total:'—'}</td>
+                <td class="fw-700 fc col-final" data-s="${st.id}" style="color:var(--neon-green)">${(has1||has2)?fin:'—'}</td>
             </tr>`;
         });
 
@@ -104,27 +105,33 @@ const MarksUtils = (() => {
                 </div>
             </div>
             <div class="card-body" style="padding:0.6rem">
+                <!-- Mobile toggle buttons wrapper -->
+                <div class="mobile-toggle-wrapper">
+                    <button class="mobile-toggle-btn active" data-view="mid1">MID - I</button>
+                    <button class="mobile-toggle-btn" data-view="mid2">MID - II</button>
+                    <button class="mobile-toggle-btn" data-view="final">Final Summary</button>
+                </div>
                 <div style="background:rgba(79,106,255,0.05);border:1px solid rgba(79,106,255,0.1);border-radius:8px;padding:0.5rem 0.8rem;margin-bottom:0.8rem;font-size:0.75rem;color:var(--text-secondary);">
                     ${icon('ruler', { size: 16 })} <b>Desc</b> = Best 3 of Q1-Q6 (/30) → ×15/30 &nbsp;|&nbsp; <b>UT</b> (/20) → ×10/20 &nbsp;|&nbsp; <b>Asgn</b> (/10) → ×5/10 &nbsp;|&nbsp; <b>MID Total = /30</b> &nbsp;|&nbsp; <b>Final = (MID-I + MID-II) / 2</b>
                 </div>
                 <div class="table-wrapper" style="max-height:65vh;overflow:auto;">
-                    <table class="table marks-table" style="font-size:0.76rem;white-space:nowrap;">
+                    <table class="table marks-table view-mid1" style="font-size:0.76rem;white-space:nowrap;">
                         <thead>
                             <tr>
                                 <th rowspan="2" class="sticky-col sc1" style="z-index:3">S.No</th>
                                 <th rowspan="2" class="sticky-col sc2" style="z-index:3">Roll No</th>
                                 <th rowspan="2" class="sticky-col sc3" style="z-index:3;min-width:110px">Name</th>
-                                <th colspan="10" style="text-align:center;color:var(--neon-blue);border-bottom:2px solid rgba(79,106,255,0.4)">MID - I</th>
-                                <th colspan="10" style="text-align:center;color:var(--neon-purple);border-bottom:2px solid rgba(168,85,247,0.4)">MID - II</th>
-                                <th rowspan="2" style="text-align:center;color:var(--neon-green)">Final<br>/30</th>
+                                <th colspan="10" class="col-mid1" style="text-align:center;color:var(--neon-blue);border-bottom:2px solid rgba(79,106,255,0.4)">MID - I</th>
+                                <th colspan="10" class="col-mid2" style="text-align:center;color:var(--neon-purple);border-bottom:2px solid rgba(168,85,247,0.4)">MID - II</th>
+                                <th rowspan="2" class="col-final" style="text-align:center;color:var(--neon-green)">Final<br>/30</th>
                             </tr>
                             <tr>
-                                <th>Q1<br>(CO1)</th><th>Q2<br>(CO1)</th><th>Q3<br>(CO2)</th><th>Q4<br>(CO2)</th><th>Q5<br>(CO3)</th><th>Q6<br>(CO3)</th>
-                                <th style="color:var(--neon-cyan)">Desc</th><th>UT</th><th>Asgn</th>
-                                <th style="color:var(--neon-blue)">Total</th>
-                                <th>Q1<br>(CO3)</th><th>Q2<br>(CO3)</th><th>Q3<br>(CO4)</th><th>Q4<br>(CO4)</th><th>Q5<br>(CO5)</th><th>Q6<br>(CO5)</th>
-                                <th style="color:var(--neon-cyan)">Desc</th><th>UT</th><th>Asgn</th>
-                                <th style="color:var(--neon-purple)">Total</th>
+                                <th class="col-mid1 col-mid1-details">Q1<br>(CO1)</th><th class="col-mid1 col-mid1-details">Q2<br>(CO1)</th><th class="col-mid1 col-mid1-details">Q3<br>(CO2)</th><th class="col-mid1 col-mid1-details">Q4<br>(CO2)</th><th class="col-mid1 col-mid1-details">Q5<br>(CO3)</th><th class="col-mid1 col-mid1-details">Q6<br>(CO3)</th>
+                                <th class="col-mid1 col-mid1-details" style="color:var(--neon-cyan)">Desc</th><th class="col-mid1 col-mid1-details">UT</th><th class="col-mid1 col-mid1-details">Asgn</th>
+                                <th class="col-mid1 col-mid1-total" style="color:var(--neon-blue)">Total</th>
+                                <th class="col-mid2 col-mid2-details">Q1<br>(CO3)</th><th class="col-mid2 col-mid2-details">Q2<br>(CO3)</th><th class="col-mid2 col-mid2-details">Q3<br>(CO4)</th><th class="col-mid2 col-mid2-details">Q4<br>(CO4)</th><th class="col-mid2 col-mid2-details">Q5<br>(CO5)</th><th class="col-mid2 col-mid2-details">Q6<br>(CO5)</th>
+                                <th class="col-mid2 col-mid2-details" style="color:var(--neon-cyan)">Desc</th><th class="col-mid2 col-mid2-details">UT</th><th class="col-mid2 col-mid2-details">Asgn</th>
+                                <th class="col-mid2 col-mid2-total" style="color:var(--neon-purple)">Total</th>
                             </tr>
                         </thead>
                         <tbody>${rows}</tbody>
@@ -136,6 +143,19 @@ const MarksUtils = (() => {
 
     /* ---------- Bind live-calculation events ---------- */
     function bindEvents(container, subjectId) {
+        // Bind mobile toggle buttons
+        container.querySelectorAll('.mobile-toggle-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                container.querySelectorAll('.mobile-toggle-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const view = btn.dataset.view;
+                const table = container.querySelector('.marks-table');
+                if (table) {
+                    table.className = `table marks-table view-${view}`;
+                }
+            });
+        });
+
         container.querySelectorAll('.mi').forEach(inp => {
             inp.addEventListener('input', () => {
                 const f = inp.dataset.f;
