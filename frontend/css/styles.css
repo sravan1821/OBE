@@ -1109,8 +1109,116 @@ body.theme-purple .dropdown-item:hover { background: rgba(255, 255, 255, 0.06); 
     font-size: 1rem;
 }
 
+/* Responsive media queries and layout fixes */
+@media (max-width: 1024px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 @media (max-width: 768px) {
+    /* Prevent overall page horizontal overflow */
+    body, html, #dashboard-page, .main-content {
+        overflow-x: hidden;
+        width: 100%;
+    }
+
+    /* Sidebar transitions for Mobile overlay view */
+    .sidebar {
+        position: fixed !important;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 1000;
+        width: 260px !important;
+        transform: translateX(-100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    #dashboard-page.sidebar-open .sidebar {
+        transform: translateX(0);
+    }
+
+    #dashboard-page.sidebar-collapsed .sidebar {
+        transform: translateX(-100%);
+        width: 260px !important;
+    }
+
+    /* Sidebar Backdrop Overlay */
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.5);
+        backdrop-filter: blur(4px);
+        z-index: 999;
+    }
+    
+    #dashboard-page.sidebar-open .sidebar-overlay {
+        display: block;
+    }
+
+    /* Main content expands to full width on mobile/tablet */
+    .main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+    }
+
+    .topbar {
+        padding: 0 1rem !important;
+    }
+
+    .page-content {
+        padding: 1rem !important;
+    }
+
     .subject-cards-grid {
         grid-template-columns: 1fr;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
+
+@media (max-width: 576px) {
+    /* Hide topbar username/role text on small mobiles to save space */
+    .user-info {
+        display: none !important;
+    }
+    
+    .topbar-title {
+        font-size: 1.05rem !important;
+    }
+
+    /* Form container within modal responsive scaling */
+    .modal-content {
+        width: 92% !important;
+        margin: auto;
+    }
+    
+    .modal-body {
+        padding: 1.5rem !important;
+    }
+
+    /* College name sizing on mobile login */
+    .college-header {
+        flex-direction: column !important;
+        text-align: center !important;
+        gap: 10px !important;
+    }
+    
+    .college-name {
+        font-size: 2.2rem !important;
+    }
+    
+    .college-tagline {
+        font-size: 0.82rem !important;
+    }
+    
+    .hero-subtitle {
+        font-size: 0.9rem !important;
+        padding: 0 1rem;
     }
 }

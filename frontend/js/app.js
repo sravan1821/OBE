@@ -11,6 +11,7 @@ const App = (() => {
     function init() {
         DataStore.init();
         bindLoginEvents();
+        window.addEventListener('resize', applySidebarState);
 
         const session = JSON.parse(localStorage.getItem('obe_session') || 'null');
         if (session) {
@@ -87,8 +88,21 @@ const App = (() => {
     /* =================== DASHBOARD =================== */
     function showDashboard() {
         document.getElementById('login-page').style.display = 'none';
-        document.getElementById('dashboard-page').style.display = '';
+        const dbPage = document.getElementById('dashboard-page');
+        dbPage.style.display = '';
         renderSidebar();
+        
+        let overlay = document.getElementById('sidebar-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'sidebar-overlay';
+            overlay.className = 'sidebar-overlay';
+            dbPage.appendChild(overlay);
+            overlay.addEventListener('click', () => {
+                dbPage.classList.remove('sidebar-open');
+            });
+        }
+        
         loadModule('dashboard');
     }
 
@@ -205,6 +219,9 @@ const App = (() => {
                 e.preventDefault();
                 sidebar.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
                 item.classList.add('active');
+                if (window.innerWidth <= 768) {
+                    document.getElementById('dashboard-page').classList.remove('sidebar-open');
+                }
                 loadModule(item.dataset.section);
             });
         });
@@ -320,19 +337,32 @@ const App = (() => {
         const toggleBtn = document.getElementById('sidebar-toggle');
         if (!page || !toggleBtn) return;
 
-        const collapsed = isSidebarCollapsed();
-        page.classList.toggle('sidebar-collapsed', collapsed);
-        toggleBtn.innerHTML = collapsed
-            ? icon('chevrons-right', { size: 20 })
-            : icon('menu', { size: 20 });
-        toggleBtn.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
-        toggleBtn.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+        if (window.innerWidth > 768) {
+            const collapsed = isSidebarCollapsed();
+            page.classList.toggle('sidebar-collapsed', collapsed);
+            toggleBtn.innerHTML = collapsed
+                ? icon('chevrons-right', { size: 20 })
+                : icon('menu', { size: 20 });
+            toggleBtn.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
+            toggleBtn.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+            page.classList.remove('sidebar-open');
+        } else {
+            page.classList.remove('sidebar-collapsed');
+            toggleBtn.innerHTML = icon('menu', { size: 20 });
+            toggleBtn.title = 'Menu';
+            toggleBtn.setAttribute('aria-label', 'Menu');
+        }
     }
 
     function toggleSidebar() {
-        const nextCollapsed = !isSidebarCollapsed();
-        localStorage.setItem(SIDEBAR_STATE_KEY, nextCollapsed ? '1' : '0');
-        applySidebarState();
+        if (window.innerWidth <= 768) {
+            const page = document.getElementById('dashboard-page');
+            page.classList.toggle('sidebar-open');
+        } else {
+            const nextCollapsed = !isSidebarCollapsed();
+            localStorage.setItem(SIDEBAR_STATE_KEY, nextCollapsed ? '1' : '0');
+            applySidebarState();
+        }
     }
 
     /* --- Notifications --- */
